@@ -1,0 +1,115 @@
+---
+title:  "Saureus methylation"
+author: "Natalia Zajac"
+output:
+  html_document: 
+    highlight: pygments
+    theme: sand
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+editor_options: 
+  chunk_output_type: inline
+---
+
+Started on `r format(Sys.time(), "%Y-%m-%d %H:%M:%S")`
+
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(tidyverse)
+library(rtracklayer)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(cowplot)
+library(patchwork)
+library(data.table)
+
+sample_metadata = read.delim("/srv/GT/analysis/zajacn/course_RCIG/methylation_sample_metadata.txt")
+sample_metadata$condition = sapply(str_split(sample_metadata$Name, "_"), .subset, 2)
+geneAnno = readGFF("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
+geneAnno = geneAnno[geneAnno$type == "gene",]
+
+# Read GFF file 
+methylation = NULL
+for (i in sample_metadata$Name){
+  smp = sample_metadata[sample_metadata$Name == i,]
+  methylation_data <- read_delim(smp$path_to_met_result, delim = "\t", comment = "#", 
+                               col_names = c("seqname", "source", "feature", "start", 
+                                             "end", "score", "strand", "phase", "attributes"))
+
+  # Extract key attributes (IPD ratio, modification type, etc.)
+  methylation_data <- methylation_data %>%
+  mutate(
+    IPDRatio = str_extract(attributes, "IPDRatio=[^;]+") %>% str_remove("IPDRatio=") %>% as.numeric(),
+    score = as.numeric(score)
+  )
+
+  filtered_data <- methylation_data %>%
+    filter(score > 30)
+  
+  genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end" )]))
+  setDT(genes, key = c("seqid", "start", "end"))
+  metbases <- as.data.table(unique(filtered_data[, c("seqname", "start", "end")]))
+  colnames(metbases) = c("seqid", "snp", "pos2")
+  setDT(metbases, key = c("seqid", "snp", "pos2"))
+  obj <- foverlaps(metbases, genes, by.x = c("seqid", "snp", "pos2"),
+                 by.y = c("seqid", "start", "end"),
+                 type = "within", nomatch = 0)
+  obj <- merge(obj, filtered_data,
+             by.x = c("seqid", "snp", "pos2"),
+             by.y = c("seqname", "start", "end"),
+             all = TRUE)
+  obj <- merge(obj,
+             geneAnno[, c("seqid", "start", "end",
+                             "ID" , "gene", "locus_tag")],
+             by = c("seqid", "start", "end"),
+             all.x = TRUE)
+  obj = data.frame(obj)
+  print(paste(nrow(filtered_data),nrow(obj)))
+  
+  methylation[[i]] = obj
+}
+
+
+positions6mA = lapply(methylation, function(x) as.character(unique(x[x$feature == "m6A",]$snp)))
+positions4mC = lapply(methylation, function(x) as.character(unique(x[x$feature == "m4C",]$snp)))
+
+```
+
+
+Number of 6mA and 4mC methylation sites per sample
+
+```{r, fig.height=10, fig.width=12, echo=FALSE, warning=FALSE}
+
+p1 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature) %>% summarise(count = n_distinct(snp)) %>% ggplot(aes(Name, count, color = feature)) + geom_point() + facet_grid(~condition, scales = "free") + theme(axis.text.x = element_text(angle = 45,hjust = 1, vjust = 1))
+
+p2 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature) %>% summarise(count = n_distinct(snp)) %>% ggplot(aes(condition, count, color = feature)) + geom_boxplot() 
+
+p1/p2
+```
+
+Number of genes with 6mA or 4mC modifications
+
+```{r, fig.height=7, fig.width=7, echo=FALSE, warning=FALSE}
+
+p1 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature) %>% summarise(count = n_distinct(gene)) %>% ggplot(aes(condition, count, color = feature)) + geom_boxplot() 
+
+p1
+```
+
+
+Sharing of 6mA or 4mC modified sites
+
+```{r, fig.height=10, fig.width=13, echo=FALSE, warning=FALSE}
+
+ggVennDiagram::ggVennDiagram(positions6mA, nintersects = 100)
+
+```
+
+
+```{r, fig.height=10, fig.width=13, echo=FALSE, warning=FALSE}
+
+ggVennDiagram::ggVennDiagram(positions4mC, nintersects = 100)
+
+```

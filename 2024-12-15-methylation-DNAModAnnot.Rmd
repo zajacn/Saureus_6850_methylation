@@ -1,0 +1,335 @@
+---
+title:  "Saureus methylation DNAModAnnot"
+author: "Natalia Zajac"
+output:
+  html_document: 
+    highlight: pygments
+    theme: sand
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+editor_options: 
+  chunk_output_type: inline
+---
+
+Started on `r format(Sys.time(), "%Y-%m-%d %H:%M:%S")`
+
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(tidyverse)
+library(rtracklayer)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(cowplot)
+library(patchwork)
+library(DT)
+library(data.table)
+library(DNAModAnnot)
+
+sample_metadata = read.delim("/srv/GT/analysis/zajacn/course_RCIG/methylation_sample_metadata.txt")
+sample_metadata$condition = sapply(str_split(sample_metadata$Name, "_"), .subset, 2)
+geneAnno = readGFF("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
+geneAnno = geneAnno[geneAnno$type == "gene",]
+
+saureus_genome <- Biostrings::readDNAStringSet("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_ncbi_sequence.forSMRTLink.fasta")
+names(saureus_genome) = str_remove(names(saureus_genome), " Staphylococcus aureus subsp. aureus 6850, complete genome")
+saureus_genome_range <- GetGenomeGRanges(saureus_genome)
+
+data = NULL
+for (i in unique(sample_metadata$Name)){
+  smp = sample_metadata[sample_metadata$Name == i,]
+  PacBioGFF_granges <- ImportPacBioGFF(
+    cPacBioGFFPath = str_replace(smp$path_to_met_result, "motifs.gff", "basemods.gff"),
+    cNameModToExtract = "m6A",
+    cModNameInOutput = "m6A",
+    cContigToBeAnalyzed = names(saureus_genome)
+  )
+  
+  PacBioCSV_gpos <- ImportPacBioCSV(
+    cPacBioCSVPath = str_replace(smp$path_to_met_result, "motifs.gff", "basemods.csv"),
+    cSelectColumnsToExtract = c(
+      "refName", "tpl", "strand",
+      "base", "score",
+      "ipdRatio", "coverage"
+    ),
+    lKeepExtraColumnsInGPos = TRUE,
+    lSortGPos = TRUE,
+    cContigToBeAnalyzed = names(saureus_genome)
+  )
+  data[[i]]$gff = PacBioGFF_granges
+  data[[i]]$csv = PacBioCSV_gpos
+}
+
+#Following:https://github.com/AlexisHardy/DNAModAnnot
+```
+
+
+# {.tabset}
+
+## Reference genome
+
+```{r, fig.height=10, fig.width=12, echo=FALSE, warning=FALSE}
+
+report_assembly <- GetAssemblyReport(
+  dnastringsetGenome = saureus_genome,
+  cOrgAssemblyName = "S.aureus 6850 NCBI"
+)
+
+datatable(report_assembly)
+```
+
+## Coverage statistics {.tabset}
+
+### Mean coverage per contig
+
+```{r, fig.height=7, fig.width=7, echo=FALSE, warning=FALSE}
+
+mean_cov = NULL
+for (i in names(data)){
+  contig_mean_coverage <- GetMeanParamByContig(
+      grangesData = data[[i]]$csv,
+      dnastringsetGenome = saureus_genome,
+      cParamName = "coverage"
+  )
+  mean_cov[[i]] = contig_mean_coverage
+}
+
+for (i in names(mean_cov)){
+  DrawBarplotBothStrands(
+      nParamByContigForward = mean_cov[[i]]$f_strand$mean_coverage,
+      nParamByContigReverse = mean_cov[[i]]$r_strand$mean_coverage,
+      cContigNames = mean_cov[[i]]$f_strand$refName,
+      cGraphName = paste("Mean Coverage per contig", i)
+  )
+}
+```
+
+### Cov dist per base
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+for (i in names(data)){
+DrawDistriHistBox(data[[i]]$csv$coverage,
+                  cGraphName = paste("Coverage distribution of all bases sequenced", i),
+                  cParamName = "Coverage",
+                  lTrimOutliers = FALSE
+)
+}
+```
+
+## Analysis of the global distribution and motif of DNA modification data {.tabset}
+
+### Ratio Modified bases / Sequenced bases
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+
+for (i in names(data)){
+  report_modifications <- GetModReportPacBio(
+      grangesGenome = saureus_genome_range,
+      grangesPacBioGFF = data[[i]]$gff,
+      gposPacBioCSV = data[[i]]$csv,
+      cOrgAssemblyName = "Saureus 6850",
+      dnastringsetGenome = saureus_genome,
+      cBaseLetterForMod = "A",
+      cModNameInOutput = "6mA"
+  )
+  data[[i]]$mods = report_modifications
+}
+```
+
+
+```{r, fig.height=8, fig.width=8, echo=FALSE, warning=FALSE}
+mods_ratio = NULL
+for (i in names(data)){
+  contig_modification_ratio <- GetModRatioByContig(data[[i]]$gff,
+                                                   data[[i]]$csv[data[[i]]$csv$base == "A"],
+                                                   dnastringsetGenome = saureus_genome,
+                                                   cBaseLetterForMod = "A"
+  )
+  mods_ratio[[i]] = contig_modification_ratio
+}
+
+for (i in names(mods_ratio)){
+  DrawBarplotBothStrands(
+      nParamByContigForward = mods_ratio[[i]]$f_strand$Mod_ratio,
+      nParamByContigReverse = mods_ratio[[i]]$r_strand$Mod_ratio,
+      cContigNames = mods_ratio[[i]]$f_strand$refName,
+      cGraphName = "Modif/Base ratio per contig (Sequenced sites only)"
+  )
+  
+}
+```
+
+### Modification sequence logo with enrichment score
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+for (i in names(data)){
+  PacBioGFF_granges_with_sequence <- GetGRangesWindowSeqandParam(data[[i]]$gff,
+                                                                 saureus_genome_range,
+                                                                 dnastringsetGenome = saureus_genome,
+                                                                 nUpstreamBpToAdd = 5,
+                                                                 nDownstreamBpToAdd = 5
+  )
+  data[[i]]$gff_with_seq = PacBioGFF_granges_with_sequence
+}
+```
+
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+for (i in names(data)){
+  print(i)
+  DrawModLogo(
+      dnastringsetSeqAroundMod = as(data[[i]]$gff_with_seq$sequence, "DNAStringSet"),
+      nGenomicBgACGT = c(0.35, 0.15, 0.15, 0.35), cYunit = "ic_hide_bg",
+      nPositionsToAnnotate = c(6), cAnnotationText = c("6mA"), nTagTextFontSize = 12)
+}
+
+```
+
+## Filtering the DNA modification data using False Discovery Rate estimations
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+for_fdr = NULL
+for (i in names(data)){
+  motif_pct_and_PacBioGFF_grangeslist <- ExtractListModPosByModMotif(
+  grangesModPos = data[[i]]$gff,
+  grangesGenome = saureus_genome_range,
+  dnastringsetGenome = saureus_genome,
+  nUpstreamBpToAdd = 0, nDownstreamBpToAdd = 1,
+  nModMotifMinProp = 0.05,
+  cBaseLetterForMod = "A",
+  cModNameInOutput = "6mA"
+  )
+  BaseCSV_granges_filt1 <- as(data[[i]]$csv[data[[i]]$csv$base == "A"], "GRanges")
+  BaseCSV_granges_with_sequence <- GetGRangesWindowSeqandParam(
+    grangesData = BaseCSV_granges_filt1,
+    grangesGenome = saureus_genome_range,
+    dnastringsetGenome = saureus_genome,
+    nUpstreamBpToAdd = 0,
+    nDownstreamBpToAdd = 1
+  )
+  score_fdr_by_motif_list <- GetFdrEstListByThresh(
+    grangesDataWithSeq = BaseCSV_granges_with_sequence,
+    grangesDataWithSeqControl = NULL,
+    cNameParamToTest = "score",
+    nRoundDigits = 1,
+    cModMotifsAsForeground = motif_pct_and_PacBioGFF_grangeslist$motifs_to_analyse
+  )
+  score_fdr_by_motif_limit <- GetFdrBasedThreshLimit(score_fdr_by_motif_list,
+    nFdrPropForFilt = 0.05,
+    lUseBestThrIfNoFdrThr = TRUE
+  )
+  print(score_fdr_by_motif_limit)
+  
+  PacBioGFF_grangeslist_filt <- FiltPacBio(
+    grangesPacBioGFF = motif_pct_and_PacBioGFF_grangeslist$GRangesbyMotif,
+    listFdrEstByThrIpdRatio = NULL,
+    listFdrEstByThrScore = score_fdr_by_motif_limit
+  )$gff
+  
+  
+  for_fdr[[i]] = score_fdr_by_motif_list
+  data[[i]]$gff_as_granges = motif_pct_and_PacBioGFF_grangeslist
+  data[[i]]$csv_as_granges_with_seq = BaseCSV_granges_with_sequence
+  data[[i]]$filt_byFDRscore = PacBioGFF_grangeslist_filt
+  
+}
+```
+
+
+```{r, fig.height=5, fig.width=15, echo=FALSE, warning=FALSE}
+for (i in names(for_fdr)){
+  print(i)
+  DrawFdrEstList(
+  listFdrEstByThr = for_fdr[[i]],
+  cNameParamToTest = "score",
+  nFdrPropForFilt = 0.05
+  )
+}
+
+```
+Only AG motifs reach a FDR estimation below 5% (using a score threshold of somewhere above a 1300)
+
+## Analysis of the DNA modification patterns within genomic annotations {.tabset}
+
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+
+annotations_range <- rtracklayer::readGFFAsGRanges("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
+annotations_range <- PredictMissingAnnotation(
+  grangesAnnotations = annotations_range,
+  grangesGenome = saureus_genome_range,
+  cFeaturesColName = "type",
+  cGeneCategories = c("gene"),
+  lAddIntronRangesUsingExon = TRUE
+)
+
+granges = NULL
+
+for (i in names(data)){
+  motifs_base <- data[[i]]$gff_as_granges$motifs_to_analyse[data[[i]]$gff_as_granges$motifs_to_analyse == "AT"]
+  motifs_modifications <- data[[i]]$gff_as_granges$mod_motif[motifs_base == data[[i]]$gff_as_granges$motifs_to_analyse]
+  PacBioGFF_granges_filtAT <- data[[i]]$filt_byFDRscore[[motifs_base]]
+  BaseCSV_granges_filtAT <- data[[i]]$csv_as_granges_with_seq[data[[i]]$csv_as_granges_with_seq$sequence == motifs_base, ]
+  granges[[i]]$motifs_base = motifs_base
+  granges[[i]]$motifs_modifications = motifs_modifications
+  granges[[i]]$PacBioGFF_granges_filtAT = PacBioGFF_granges_filtAT
+  granges[[i]]$BaseCSV_granges_filtAT = BaseCSV_granges_filtAT
+}
+
+
+```
+
+### Counts by feature
+
+```{r, fig.height=5, fig.width=10, echo=FALSE, warning=FALSE}
+# Mod annotation by feature
+
+for (i in names(granges)){
+  annotations_range_ModBase_counts <- GetModBaseCountsByFeature(
+    grangesAnnotations = annotations_range,
+    grangesModPos = granges[[i]]$PacBioGFF_granges_filtAT,
+    gposModTargetBasePos = granges[[i]]$BaseCSV_granges_filtAT,
+    lIgnoreStrand = FALSE
+  )
+  print(i)
+  DrawModBasePropByFeature(
+    grangesAnnotationsWithCounts = annotations_range_ModBase_counts,
+    cFeaturesToCompare = c("gene", "intergenic"),
+    lUseCountsPerkbp = TRUE,
+    cBaseMotif = granges[[i]]$motifs_base,
+    cModMotif = granges[[i]]$motifs_modifications
+  )
+}
+```
+
+
+
+### Counts within feature
+
+```{r, fig.height=5, fig.width=10, echo=FALSE, warning=FALSE}
+# Mod annotation by feature
+
+for (i in names(granges)[c(1,5,6,7,11,12)]){
+  print(i)
+  gene_annotation_range <- annotations_range[annotations_range$type == "gene", ]
+  gene_annotation_range <- GetModBaseCountsWithinFeature(
+    grangesAnnotations = gene_annotation_range,
+    grangesModPos = granges[[i]]$PacBioGFF_granges_filtAT,
+    gposModTargetBasePos = granges[[i]]$BaseCSV_granges_filtAT,
+    lIgnoreStrand = FALSE,
+    nWindowsNb = 20
+  )
+  DrawModBaseCountsWithinFeature(
+    grangesAnnotationsWithCountsByWindow = gene_annotation_range,
+    cFeatureName = "gene",
+    cBaseMotif = granges[[i]]$motifs_base,
+    cModMotif = granges[[i]]$motifs_modifications
+  )
+}
+```
+
+
+
+
+
