@@ -24,15 +24,15 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * we have evidence that we can filter for IPD ratio > 2.5 for m6A (there is a bimodal distribution)
 
 ## Questions to potentially adress
-* Intergene distances?
-* Do we see Methylation in gene bodies or in intergenic regions? (should also be in context of how much is coding from the full genome vs not coding)
+* Intergene distances? (from gff -> NZ looks into it)
+* methylation density: -> done by NZ: Do we see Methylation in gene bodies or in intergenic regions? (should also be in context of how much is coding from the full genome vs not coding)
 * Methylation in promoter regions? (how to define promoter regions?) -> according to google: -35bp before start codon and -10bp after TSS (transcription start site)
 * For methylations in the coding regions, what codon (position and AA) are affected?
 * Is there a PA-SN effect (global analysis allSN vs allTSB)
     --> How does this look for each individual clone?
 * Do we find methylations specific to a group of clones? (evolution effect)
-* Comparing the ancestor but also the clones (PASN vs TSB) -> each clone individually -> Lukas
-* 6mA (and 4mC) density per gene (no intergenics) -> Natalia
+* Comparing the ancestor but also the clones (PASN vs TSB) -> each clone individually
+* 6mA (and 4mC) density per gene (no intergenics) # no difference with respect to conditions
 
 
 

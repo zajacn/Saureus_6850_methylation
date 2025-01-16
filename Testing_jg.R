@@ -165,6 +165,7 @@ pdf("BarcodePlot.pdf", width = 40, height = 20)
 print(myChromosomePlot_plusStrand)
 dev.off()
 
+# add here colors for intergenic, gene, upstream or downstream!
 
 
 
