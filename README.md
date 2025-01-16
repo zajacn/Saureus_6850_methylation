@@ -33,3 +33,4 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 # Resources
 https://www.nature.com/articles/s41467-024-54033-3;
 https://www.nature.com/articles/srep29390
+https://journals.asm.org/doi/full/10.1128/mbio.01773-24 #conserved 50S ribosomal protein methylation 
