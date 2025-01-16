@@ -2,7 +2,9 @@
 
 All scripts relevent to the project for course BIO253, funded by micro_innovation grant from UZH.
 
-# Working Plan
+# Working Plan and things to do
+* use protein fasta w/ StringDB to get functional classes (https://string-db.org/)
+* use protein fasta directly with eggNogg to get GO categories (http://eggnog6.embl.de/) -> eggNog-mapper is down today?
 
 
 # Brainstorming 16/01/2025
