@@ -25,6 +25,7 @@ library(cowplot)
 library(patchwork)
 library(data.table)
 library(ShortRead)
+library(ezRun)
 
 sample_metadata = read.delim("/srv/GT/analysis/zajacn/course_RCIG/methylation_sample_metadata.txt")
 sample_metadata$condition = sapply(str_split(sample_metadata$Name, "_"), .subset, 2)
@@ -66,9 +67,9 @@ for (i in sample_metadata$Name){
   #Minus
   genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end", "strand")]))
   genes = genes[genes$strand == "-",c("seqid", "start", "end")]
-  genes$upstream = genes$start-500
+  genes$upstream = genes$start-200
   genes = genes %>% mutate(upstream = if_else(upstream < 0, 0, upstream))
-  genes$downstream = genes$end+500
+  genes$downstream = genes$end+200
   genes = genes %>% mutate(downstream = if_else(downstream > length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), downstream))
   setDT(genes, key = c("seqid", "upstream", "downstream"))
   
@@ -89,14 +90,14 @@ for (i in sample_metadata$Name){
              by.x = c("seqname", "start.y", "end.y"),
              all.x = TRUE)
   minus = data.frame(obj)
-  colnames(minus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(minus)[6:21])
+  colnames(minus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(minus)[6:22])
   
   #Plus
   genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end", "strand")]))
   genes = genes[genes$strand == "+",c("seqid", "start", "end")]
-  genes$upstream = genes$start-500
+  genes$upstream = genes$start-200
   genes = genes %>% mutate(upstream = if_else(upstream < 0, 0, upstream))
-  genes$downstream = genes$end+500
+  genes$downstream = genes$end+200
   genes = genes %>% mutate(downstream = if_else(downstream > length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), downstream))
   setDT(genes, key = c("seqid", "upstream", "downstream"))
   
@@ -117,7 +118,7 @@ for (i in sample_metadata$Name){
              by.x = c("seqname", "start.y", "end.y"),
              all.x = TRUE)
   plus = data.frame(obj)
-  colnames(plus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(plus)[6:21])
+  colnames(plus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(plus)[6:22])
   
   obj = rbind(minus,plus)
   print(length(unique(obj$start)) == length(unique(filtered_data$start)))
@@ -128,8 +129,8 @@ for (i in sample_metadata$Name){
 }
 
 
-positions6mA = lapply(methylation, function(x) as.character(unique(x[x$feature == "m6A",]$snp)))
-positions4mC = lapply(methylation, function(x) as.character(unique(x[x$feature == "m4C",]$snp)))
+positions6mA = lapply(methylation, function(x) as.character(unique(x[x$feature == "m6A",]$start)))
+positions4mC = lapply(methylation, function(x) as.character(unique(x[x$feature == "m4C",]$start)))
 
 mtx = bind_rows(methylation, .id = "Name")
 
@@ -153,6 +154,23 @@ c_counts <- lapply(sequences, function(seq){
 })
 c_counts_per_gene <- data.frame(Ccounts = t(data.frame(c_counts))) %>% rownames_to_column()
 ac_counts = merge(a_counts_per_gene,c_counts_per_gene, by = "rowname")
+mtx = merge(mtx, ac_counts, by.x = "locus_tag", by.y = "rowname", all.x = TRUE)
+
+names = setNames(if_else(grepl("A", sapply(str_split(unique(mtx$Name), "_"), .subset, 3)) == TRUE, sapply(str_split(unique(mtx$Name), "_"), .subset, 1), sapply(str_split(unique(mtx$Name), "_"), .subset, 1)), unique(mtx$Name))
+names1 = setNames(rep("PASN", 9), unique(mtx$Name)[grepl("SN", unique(mtx$Name))])
+names2 = setNames(rep("TSB", 9), unique(mtx$Name)[grepl("TSB", unique(mtx$Name))])
+treatment = c(names1, names2)
+metad = merge(data.frame(treatment) %>% rownames_to_column(), data.frame(names) %>% rownames_to_column(), by = "rowname")
+metad$replicate = sapply(str_split(sapply(str_split(metad$rowname, "_"), .subset, 3), ""), .subset, 2) %>% as.numeric()
+colnames(metad) = c("Name", "treatment", "group", "replicate")
+mtx = merge(mtx, metad, by = "Name", all.x = TRUE)
+
+#Limit it to methylation sites that are present in at least 66% of replicates
+
+at_least_two_reps = mtx %>% group_by(treatment, group, feature, start, strand) %>% summarise(replicates = n_distinct(replicate)) %>% filter(replicates > 1)
+at_least_two_reps$keep = "Keep"
+mtx = merge(mtx, at_least_two_reps[,-6], by = c("treatment", "group", "start", "strand", "feature"), all.x = TRUE)
+mtx = mtx[mtx$keep == "Keep",]
 
 ```
 
@@ -175,8 +193,11 @@ For whole genome amplification, the statistical test used is a case-control, two
 
 https://github.com/PacificBiosciences/kineticsTools/blob/master/doc/manual.rst
 
+# {.tabset}
 
-Plotting IPDratio by score and by coverage
+## QC {.tabset}
+
+### Plotting IPDratio by score 
 
 ```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
 
@@ -185,6 +206,8 @@ for (i in sample_metadata$Name) {
 }
 
 ```
+
+### Plotting IPDratio by coverage
 
 
 ```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
@@ -195,6 +218,7 @@ for (i in sample_metadata$Name) {
 
 ```
 
+### Plotting IPDratio by score categories
 
 ```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
 
@@ -208,7 +232,9 @@ for (i in sample_metadata$Name) {
 
 ```
 
-Number of 6mA and 4mC methylation sites per sample
+## Analysis {.tabset}
+
+### Number of 6mA and 4mC methylation sites per sample
 
 ```{r, fig.height=10, fig.width=12, echo=FALSE, warning=FALSE}
 
@@ -219,7 +245,7 @@ p2 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_spli
 p1/p2
 ```
 
-Number of genes with 6mA or 4mC modifications
+### Number of genes with 6mA or 4mC modifications
 
 ```{r, fig.height=7, fig.width=7, echo=FALSE, warning=FALSE}
 
@@ -229,7 +255,7 @@ p1
 ```
 
 
-Sharing of 6mA or 4mC modified sites
+### Sharing of 6mA or 4mC modified sites
 
 ```{r, fig.height=10, fig.width=13, echo=FALSE, warning=FALSE}
 
@@ -245,7 +271,7 @@ ggVennDiagram::ggVennDiagram(positions4mC, nintersects = 100)
 ```
 
 
-Ideas:
+## Ideas:
 
 -how the methylation is detected:
 https://www.nature.com/articles/s41576-018-0081-3
