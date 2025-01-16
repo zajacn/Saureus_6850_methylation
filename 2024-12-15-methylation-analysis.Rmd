@@ -170,7 +170,7 @@ mtx = merge(mtx, metad, by = "Name", all.x = TRUE)
 at_least_two_reps = mtx %>% group_by(treatment, group, feature, start, strand) %>% summarise(replicates = n_distinct(replicate)) %>% filter(replicates > 1)
 at_least_two_reps$keep = "Keep"
 mtx = merge(mtx, at_least_two_reps[,-6], by = c("treatment", "group", "start", "strand", "feature"), all.x = TRUE)
-mtx = mtx[mtx$keep == "Keep",]
+mtx = mtx[which(mtx$keep == "Keep"),]
 
 ```
 
