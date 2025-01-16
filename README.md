@@ -31,5 +31,5 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 
 
 # Resources
-https://www.nature.com/articles/s41467-024-54033-3
+https://www.nature.com/articles/s41467-024-54033-3;
 https://www.nature.com/articles/srep29390
