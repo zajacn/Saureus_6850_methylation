@@ -15,7 +15,7 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * Intergene distances?
 * Methylation in gene bodies or in intergenic regions?
 * Methylation in promoter regions?
-
+* For methylations in the coding regions, what codon (position and AA) are affected?
 
 
 # Resources
