@@ -37,7 +37,7 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 
 
 # Resources
-https://www.nature.com/articles/s41467-024-54033-3;
-https://www.nature.com/articles/srep29390
+https://www.nature.com/articles/s41467-024-54033-3; (methylation in SA from Group X)
+https://www.nature.com/articles/srep29390 (methylation in SA from Group X)
 https://journals.asm.org/doi/full/10.1128/mbio.01773-24 #conserved 50S ribosomal protein methylation 
 https://www.nature.com/articles/s41467-023-38291-1 #conserved pattern of 6mA across 28 strains of L.paracasei
