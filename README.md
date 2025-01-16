@@ -2,9 +2,8 @@
 
 All scripts relevent to the project for course BIO253, funded by micro_innovation grant from UZH.
 
-
-
 # Working Plan
+
 
 # Brainstorming 16/01/2025
 * For methylations in the coding regions, what codon (position and AA) are affected?
@@ -25,6 +24,8 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * Is there a PA-SN effect (global analysis allSN vs allTSB)
     --> How does this look for each individual clone?
 * Do we find methylations specific to a group of clones? (evolution effect)
+* Comparing the ancestor but also the clones (PASN vs TSB) -> each clone individually
+* 6mA (and 4mC) density per gene (no intergenics)
 
 
 

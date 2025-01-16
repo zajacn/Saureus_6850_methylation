@@ -8,3 +8,8 @@
 # Jonas looks into methylation data
 
 mtx <- readRDS("resources/methylation_data.rds")
+dim(mtx)
+
+
+# try to visualize
+
