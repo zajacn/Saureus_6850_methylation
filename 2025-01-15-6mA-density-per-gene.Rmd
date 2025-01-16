@@ -1,0 +1,50 @@
+---
+title:  "Saureus methylation"
+author: "Natalia Zajac"
+output:
+  html_document: 
+    highlight: pygments
+    theme: sand
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+editor_options: 
+  chunk_output_type: inline
+---
+
+Started on `r format(Sys.time(), "%Y-%m-%d %H:%M:%S")`
+
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(tidyverse)
+library(rtracklayer)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(cowplot)
+library(patchwork)
+library(data.table)
+library(ShortRead)
+library(ezRun)
+
+sample_metadata = read.delim("/srv/GT/analysis/zajacn/course_RCIG/methylation_sample_metadata.txt")
+sample_metadata$condition = sapply(str_split(sample_metadata$Name, "_"), .subset, 2)
+geneAnno = readGFF("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
+geneAnno = geneAnno[geneAnno$type == "gene",]
+fasta6850 = readDNAStringSet("SA6850_set_forIGV/SA_6850_ncbi_sequence.fasta")
+bases = data.frame(count = sapply(list("C", "A", "G", "T"), function(base) vcountPattern(base,fasta6850))) %>% rownames_to_column("Sequence")
+
+methyl = readRDS("resources/methylation_data.rds")
+methyl = methyl %>% rownames_to_column() %>% dplyr::select(-1)
+mtx = unique(methyl[which(methyl$feature == "m6A"),c(1,2,3,6,7,27,28)])
+mtx = mtx[!is.na(mtx),]
+
+mtx = mtx %>% group_by(treatment, group,Name, locus_tag, Acounts, Ccounts) %>% summarise("count6mA" = n_distinct(start)) %>% mutate(density6mA = count6mA/Acounts)
+```
+
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+
+ggplot(mtx, aes(density6mA, color = paste(group, treatment))) + geom_density()
+
+```
