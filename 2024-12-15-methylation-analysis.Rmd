@@ -232,6 +232,17 @@ for (i in sample_metadata$Name) {
 
 ```
 
+### Distributions
+
+```{r, fig.height=6, fig.width=12, echo=FALSE, warning=FALSE}
+
+p1 = ggplot(mtx[mtx$feature == "m6A",], aes(score)) + geom_density() 
+p2 = ggplot(mtx[mtx$feature == "m6A",], aes(IPDRatio)) + geom_density() 
+
+p1 + p2
+
+```
+
 ## Analysis {.tabset}
 
 ### Number of 6mA and 4mC methylation sites per sample
@@ -270,6 +281,23 @@ ggVennDiagram::ggVennDiagram(positions4mC, nintersects = 100)
 
 ```
 
+Methylated sites overlap between treatments filtered 
+
+```{r, fig.height=10, fig.width=13, echo=FALSE, warning=FALSE}
+
+ggVennDiagram::ggVennDiagram(list("PASN" = mtx[mtx$feature == "m6A"& mtx$treatment == "PASN",]$start, "TSB" = mtx[ mtx$feature == "m6A"& mtx$treatment == "TSB",]$start))
+
+```
+
+Heatmap of mtx
+
+
+```{r, fig.height=10, fig.width=13, echo=FALSE, warning=FALSE}
+
+ggVennDiagram::ggVennDiagram(list("PASN" = mtx[mtx$feature == "m6A"& mtx$treatment == "PASN",]$start, "TSB" = mtx[ mtx$feature == "m6A"& mtx$treatment == "TSB",]$start))
+
+```
+
 
 ## Ideas:
 
@@ -277,8 +305,9 @@ ggVennDiagram::ggVennDiagram(positions4mC, nintersects = 100)
 https://www.nature.com/articles/s41576-018-0081-3
 https://www.pacb.com/wp-content/uploads/2015/09/WP_Detecting_DNA_Base_Modifications_Using_SMRT_Sequencing.pdf
 
--6mA density per gene:
+-6mA density per gene: (but also 4mC)
 https://link.springer.com/article/10.1186/s12864-024-10074-y#Sec10
 
-
+-comparing ancestors (TSB vs PASN) + each clone
+-comparing gene categories (methylation levels between categories - across all samples)
 
