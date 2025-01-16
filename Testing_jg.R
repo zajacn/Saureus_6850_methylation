@@ -7,4 +7,4 @@
 
 # Jonas looks into methylation data
 
-readRDS("resources/methylation_data.rds")
+mtx <- readRDS("resources/methylation_data.rds")

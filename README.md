@@ -15,6 +15,7 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * Regions (from all strains) in the genome.. how "uniform" is the genome methylated? (white or black spots?)
 * PCA from this heatmap?
 * try to bring in categories for the genes based on eggNOGG or StringDB?
+* we have evidence that we can filter for IPD ratio > 2.5 for m6A (there is a bimodal distribution)
 
 ## Questions to potentially adress
 * Intergene distances?
