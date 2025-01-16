@@ -12,6 +12,7 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * For methylations in the coding regions, what codon (position and AA) are affected?
 * Add proteomics data (contrast, log2FC, T, FDR) to mtx data frame (all combinations of contrasts?)
 ** What contrasts shall be calculated? (all clones vs ancestor? irrespective of growing condition?)
+* Find very consistent methylations (found in all the 3 replicates) and indicate them in the mtx data frame
 
 
 ## Questions to potentially adress
