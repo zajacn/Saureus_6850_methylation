@@ -13,7 +13,8 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * Find very consistent methylations (found in all the 3 replicates) and indicate them in the mtx data frame
 ** Here NZ reduced dataset to have it represented if and only if found in 2 out of 3 replicates from the same groupingConditions
 * Regions (from all strains) in the genome.. how "uniform" is the genome methylated? (white or black spots?)
-
+* PCA from this heatmap?
+* try to bring in categories for the genes based on eggNOGG or StringDB?
 
 ## Questions to potentially adress
 * Intergene distances?
