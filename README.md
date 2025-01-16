@@ -19,6 +19,9 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 * Methylation in gene bodies or in intergenic regions?
 * Methylation in promoter regions?
 * For methylations in the coding regions, what codon (position and AA) are affected?
+* Is there a PA-SN effect (global analysis allSN vs allTSB)
+    --> How does this look for each individual clone?
+* Do we find methylations specific to a group of clones? (evolution effect)
 
 
 
