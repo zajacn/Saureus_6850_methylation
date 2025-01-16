@@ -143,4 +143,35 @@ ggplot(myMat_long, aes(x = Start, y = factor(Name), fill = factor(value))) +
 
 
 
+# from https://stackoverflow.com/questions/67227496/how-to-plot-timeseries-events-in-a-barcode-style
+
+dim(myMat_long)
+myMat_long$Name <- as.factor(myMat_long$Name)
+myMat_long$Start <- as.numeric(myMat_long$Start)
+str(myMat_long)
+
+# Plot the heatmap using ggplot2
+myChromosomePlot_plusStrand <- ggplot(myMat_long) + geom_point(aes(x = Start, y = 2))+
+    geom_vline(aes(xintercept  = Start), data = filter(myMat_long,value == 1)) +
+    coord_cartesian(ylim = c(0,1))+
+    facet_wrap(~Name, ncol = 1, strip.position = 'left') +
+    theme(axis.title.y       = element_blank(),
+          axis.text.y        = element_blank(),
+          axis.ticks.y       = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.y = element_blank())
+
+pdf("BarcodePlot.pdf", width = 40, height = 20)
+print(myChromosomePlot_plusStrand)
+dev.off()
+
+
+
+
+# https://sib-swiss.github.io/enrichment-analysis-training/bonus_code/#code-for-a-lollipop-plot-with-ggplot2
+# lollipop plot
+
+
+
+
 
