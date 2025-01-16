@@ -24,11 +24,14 @@ library(tidyverse)
 library(cowplot)
 library(patchwork)
 library(data.table)
+library(ShortRead)
 
 sample_metadata = read.delim("/srv/GT/analysis/zajacn/course_RCIG/methylation_sample_metadata.txt")
 sample_metadata$condition = sapply(str_split(sample_metadata$Name, "_"), .subset, 2)
 geneAnno = readGFF("/srv/GT/analysis/zajacn/course_RCIG/SA6850_set_forIGV/SA_6850_GCA_000462955.1_ASM46295v1_genomic.gff")
 geneAnno = geneAnno[geneAnno$type == "gene",]
+fasta6850 = readDNAStringSet("SA6850_set_forIGV/SA_6850_ncbi_sequence.fasta")
+bases = data.frame(count = sapply(list("C", "A", "G", "T"), function(base) vcountPattern(base,fasta6850))) %>% rownames_to_column("Sequence")
 
 # Read GFF file 
 methylation = NULL
@@ -37,36 +40,89 @@ for (i in sample_metadata$Name){
   methylation_data <- read_delim(smp$path_to_met_result, delim = "\t", comment = "#", 
                                col_names = c("seqname", "source", "feature", "start", 
                                              "end", "score", "strand", "phase", "attributes"))
+  
+  #x = read.csv(str_replace(smp$path_to_met_result, "motifs.gff", "basemods.csv"))
 
   # Extract key attributes (IPD ratio, modification type, etc.)
   methylation_data <- methylation_data %>%
   mutate(
+    motif = str_extract(attributes, "context=[^;]+") %>% str_remove("context="),
+    base_after = substr(motif, 21,22),
+    base_before = substr(motif, 20,21),
+    coverage = str_extract(attributes, "coverage=[^;]+") %>% str_remove("coverage=") %>% as.numeric(),
     IPDRatio = str_extract(attributes, "IPDRatio=[^;]+") %>% str_remove("IPDRatio=") %>% as.numeric(),
-    score = as.numeric(score)
+    score = as.numeric(score),
+    identificationQv = str_extract(attributes, "identificationQv=[^;]+") %>% str_remove("identificationQv=") %>% as.numeric()
   )
 
   filtered_data <- methylation_data %>%
-    filter(score > 30)
+    filter(score > 30) %>%
+    filter(coverage > 200) 
   
-  genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end" )]))
-  setDT(genes, key = c("seqid", "start", "end"))
-  metbases <- as.data.table(unique(filtered_data[, c("seqname", "start", "end")]))
+  #Look for overlap with genes
+  minus_strand = filtered_data[filtered_data$strand == "-",]
+  plus_strand = filtered_data[filtered_data$strand == "+",]
+  
+  #Minus
+  genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end", "strand")]))
+  genes = genes[genes$strand == "-",c("seqid", "start", "end")]
+  genes$upstream = genes$start-500
+  genes = genes %>% mutate(upstream = if_else(upstream < 0, 0, upstream))
+  genes$downstream = genes$end+500
+  genes = genes %>% mutate(downstream = if_else(downstream > length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), downstream))
+  setDT(genes, key = c("seqid", "upstream", "downstream"))
+  
+  metbases <- as.data.table(unique(minus_strand[, c("seqname", "start", "end")]))
   colnames(metbases) = c("seqid", "snp", "pos2")
   setDT(metbases, key = c("seqid", "snp", "pos2"))
+  
   obj <- foverlaps(metbases, genes, by.x = c("seqid", "snp", "pos2"),
-                 by.y = c("seqid", "start", "end"),
+                 by.y = c("seqid", "upstream", "downstream"),
                  type = "within", nomatch = 0)
-  obj <- merge(obj, filtered_data,
-             by.x = c("seqid", "snp", "pos2"),
-             by.y = c("seqname", "start", "end"),
-             all = TRUE)
-  obj <- merge(obj,
-             geneAnno[, c("seqid", "start", "end",
-                             "ID" , "gene", "locus_tag")],
-             by = c("seqid", "start", "end"),
+  obj <- merge(minus_strand, obj,
+             by.y = c("seqid", "snp", "pos2"),
+             by.x = c("seqname", "start", "end"),
              all.x = TRUE)
-  obj = data.frame(obj)
-  print(paste(nrow(filtered_data),nrow(obj)))
+  obj <- merge(obj,
+             geneAnno[geneAnno$strand == "-", c("seqid", "start", "end", "ID" , "gene", "locus_tag")],
+             by.y = c("seqid", "start", "end"),
+             by.x = c("seqname", "start.y", "end.y"),
+             all.x = TRUE)
+  minus = data.frame(obj)
+  colnames(minus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(minus)[6:21])
+  
+  #Plus
+  genes <- as.data.table(unique(geneAnno[, c("seqid", "start", "end", "strand")]))
+  genes = genes[genes$strand == "+",c("seqid", "start", "end")]
+  genes$upstream = genes$start-500
+  genes = genes %>% mutate(upstream = if_else(upstream < 0, 0, upstream))
+  genes$downstream = genes$end+500
+  genes = genes %>% mutate(downstream = if_else(downstream > length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), length(fasta6850$`CP006706.1 Staphylococcus aureus subsp. aureus 6850, complete genome`), downstream))
+  setDT(genes, key = c("seqid", "upstream", "downstream"))
+  
+  metbases <- as.data.table(unique(plus_strand[, c("seqname", "start", "end")]))
+  colnames(metbases) = c("seqid", "snp", "pos2")
+  setDT(metbases, key = c("seqid", "snp", "pos2"))
+  
+  obj <- foverlaps(metbases, genes, by.x = c("seqid", "snp", "pos2"),
+                 by.y = c("seqid", "upstream", "downstream"),
+                 type = "within", nomatch = 0)
+  obj <- merge(plus_strand, obj,
+             by.y = c("seqid", "snp", "pos2"),
+             by.x = c("seqname", "start", "end"),
+             all.x = TRUE)
+  obj <- merge(obj,
+             geneAnno[geneAnno$strand == "+", c("seqid", "start", "end", "ID" , "gene", "locus_tag")],
+             by.y = c("seqid", "start", "end"),
+             by.x = c("seqname", "start.y", "end.y"),
+             all.x = TRUE)
+  plus = data.frame(obj)
+  colnames(plus) = c("seqname", "gene_start", "gene_end", "start", "end",colnames(plus)[6:21])
+  
+  obj = rbind(minus,plus)
+  print(length(unique(obj$start)) == length(unique(filtered_data$start)))
+  
+  obj = obj %>% mutate(category = case_when(start < gene_start & start >= upstream ~ "upstream", start > gene_end & start <= downstream ~ "downstream", start >= gene_start & start <= gene_end ~ "gene", is.na(upstream) == TRUE ~ "intergenic"))
   
   methylation[[i]] = obj
 }
@@ -75,16 +131,90 @@ for (i in sample_metadata$Name){
 positions6mA = lapply(methylation, function(x) as.character(unique(x[x$feature == "m6A",]$snp)))
 positions4mC = lapply(methylation, function(x) as.character(unique(x[x$feature == "m4C",]$snp)))
 
+mtx = bind_rows(methylation, .id = "Name")
+
+sequences <- readDNAStringSet("SA6850_set_forIGV/cds_from_genomic.fna")
+names(sequences) = str_extract(names(sequences), "locus_tag=[^]]+")  %>% str_remove("locus_tag=") 
+sequence_names <- names(sequences)
+a_counts <- lapply(sequences, function(seq){ 
+  matches <- gregexpr("A", seq)
+  count <- sum(attr(matches[[1]], "match.length") > 0)
+  length = nchar(seq)
+  total = count #/length
+  return(total)
+})
+a_counts_per_gene <- data.frame(Acounts = t(data.frame(a_counts))) %>% rownames_to_column()
+c_counts <- lapply(sequences, function(seq){ 
+  matches <- gregexpr("C", seq)
+  count <- sum(attr(matches[[1]], "match.length") > 0)
+  length = nchar(seq)
+  total = count #/length
+  return(total)
+})
+c_counts_per_gene <- data.frame(Ccounts = t(data.frame(c_counts))) %>% rownames_to_column()
+ac_counts = merge(a_counts_per_gene,c_counts_per_gene, by = "rowname")
+
 ```
 
+
+Explanation of all the statistics given by ipdSummary:
+
+motifs.gff
+score - Phred-transformed pvalue that a kinetic deviation exists at this position
+IPDratio - interpulse duration ratio: capped mean of normalized IPDs observed at this position/	normalized mean IPD predicted by the synthetic control model for this sequence context, > 1 - the sequencing polymerase slowed down, < 1 the sequencing polymerase sped up
+context - 20bp before and 20bp after the modified base
+identificationQv - the phred-transformed probability of an incorrect identification. Low indicates higher probability of an error.
+coverage - count of valid IPDs at this position
+
+basemods.csv
+tpl - 1-based template position
+tMean - capped mean of normalized IPDs observed at this position
+modelPrediction - normalized mean IPD predicted by the synthetic control model for this sequence context
+
+For whole genome amplification, the statistical test used is a case-control, two-sample t-test.
+
+https://github.com/PacificBiosciences/kineticsTools/blob/master/doc/manual.rst
+
+
+Plotting IPDratio by score and by coverage
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+
+for (i in sample_metadata$Name) {
+  print(ggplot(methylation[[i]], aes(IPDRatio,score,colour = feature)) + geom_point())
+}
+
+```
+
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+
+for (i in sample_metadata$Name) {
+  print(ggplot(methylation[[i]], aes(IPDRatio,coverage, colour = feature)) + geom_point())
+}
+
+```
+
+
+```{r, fig.height=5, fig.width=5, echo=FALSE, warning=FALSE}
+
+
+for (i in sample_metadata$Name) {
+  methylation[[i]]$IPDratioCats = ezCut(methylation[[i]]$IPDRatio, breaks = 1:8)
+  methylation[[i]]$scoreCats = ezCut(methylation[[i]]$score, breaks = seq(0,2000,250))
+  print(methylation[[i]] %>% group_by(scoreCats,IPDratioCats) %>% summarise(n_distinct(start)) %>% ggplot(aes(IPDratioCats, `n_distinct(start)`, fill = scoreCats)) + geom_col(position = "dodge") + scale_y_log10())
+}
+
+
+```
 
 Number of 6mA and 4mC methylation sites per sample
 
 ```{r, fig.height=10, fig.width=12, echo=FALSE, warning=FALSE}
 
-p1 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature) %>% summarise(count = n_distinct(snp)) %>% ggplot(aes(Name, count, color = feature)) + geom_point() + facet_grid(~condition, scales = "free") + theme(axis.text.x = element_text(angle = 45,hjust = 1, vjust = 1))
+p1 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature, category) %>% summarise(count = n_distinct(start)) %>% ggplot(aes(Name, count, color = feature)) + geom_point() + facet_grid(category~condition, scales = "free") + theme(axis.text.x = element_text(angle = 45,hjust = 1, vjust = 1))
 
-p2 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature) %>% summarise(count = n_distinct(snp)) %>% ggplot(aes(condition, count, color = feature)) + geom_boxplot() 
+p2 = bind_rows(methylation, .id = "Name") %>% mutate(condition = sapply(str_split(Name, "_"), .subset, 2)) %>% group_by(Name, condition, feature, category) %>% summarise(count = n_distinct(start)) %>% ggplot(aes(condition, count, color = feature)) + geom_boxplot() + facet_grid(~category, scales = "free")
 
 p1/p2
 ```
@@ -113,3 +243,16 @@ ggVennDiagram::ggVennDiagram(positions6mA, nintersects = 100)
 ggVennDiagram::ggVennDiagram(positions4mC, nintersects = 100)
 
 ```
+
+
+Ideas:
+
+-how the methylation is detected:
+https://www.nature.com/articles/s41576-018-0081-3
+https://www.pacb.com/wp-content/uploads/2015/09/WP_Detecting_DNA_Base_Modifications_Using_SMRT_Sequencing.pdf
+
+-6mA density per gene:
+https://link.springer.com/article/10.1186/s12864-024-10074-y#Sec10
+
+
+
