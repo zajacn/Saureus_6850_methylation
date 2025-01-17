@@ -13,3 +13,5 @@ mtx <- readRDS("methylation_data.rds")
 # https://www.researchgate.net/figure/Structure-of-bacterial-promoters-A-Schematic-of-RNA-polymerase-subunit-interactions_fig4_51866343
 
 corePromotor <- c(-35, +20)
+
+str(mtx)
