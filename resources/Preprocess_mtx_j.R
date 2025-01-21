@@ -14,6 +14,14 @@ library(tidyverse)
 # load mtx
 mtx <- readRDS("methylation_data.rds")
 
+# is mtx complete
+sum(is.na(mtx[mtx$strand == "-",]$locus_tag), na.rm = TRUE)
+sum(is.na(mtx[mtx$strand == "+",]$locus_tag), na.rm = TRUE)
+sum(!is.na(mtx[mtx$strand == "-",]$locus_tag), na.rm = TRUE)
+sum(!is.na(mtx[mtx$strand == "+",]$locus_tag), na.rm = TRUE)
+
+
+
 # join in annotation from EggNogg and fastaCDS
 # description lines from genomicCDS
 desc <- read_delim("DescriptionLinesFromGenomicsFasta.txt", delim = "\t", col_names = FALSE)
