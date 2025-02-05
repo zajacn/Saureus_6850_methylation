@@ -57,3 +57,6 @@ annoDF <- annoDF |> left_join(eggnog, by = c("proteinID" = "#query"))
 
 # join main table
 mtx <- mtx |> left_join(annoDF, by = c("locus_tag" = "LocusTag"))
+
+# save to rds
+saveRDS(mtx, "methylation_data_EGGnogAnnotated.rds")
