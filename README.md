@@ -5,10 +5,9 @@ All scripts relevent to the project for course BIO253, funded by micro_innovatio
 # Working Plan and things to do
 * ~~[JG] use protein fasta w/ StringDB to get functional classes (https://string-db.org/)~~ Results from StringDB not really useful since less structured
 * ~~[JG] use protein fasta directly with eggNogg to get GO categories (http://eggnog6.embl.de/)~~ -> eggNog-mapper done, this one is very useful (2025-02-05: new rds file in resources)
-* [JG] calculate all possible contrasts for proteomics data (log2FC, T, FDR) for multiple contrasts
-* [JG] add proteomics data (contrast, log2FC, T, FDR) to mtx data frame (all combinations of contrasts?)
-
-
+* ~~[JG] calculate all possible contrasts for proteomics data (log2FC, T, FDR) for multiple contrasts~~ -> done, outside of this repos using prolfquapp
+* ~~[JG] add proteomics data (contrast, log2FC, T, FDR) to mtx data frame (all combinations of contrasts?)~~ -> done, new rds file in resources
+* [JG] join proteomics data w/ mtx in both directions (mtx to proteomics and proteomics to mtx) using locus_tag
 
 
 
