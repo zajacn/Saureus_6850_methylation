@@ -2,6 +2,10 @@
 
 All scripts relevent to the project for course BIO253, funded by micro_innovation grant from UZH.
 
+# Summary of the methods 
+
+HiFi reads were converted to add kinetic information using ccs-kinetics-bystrandify script. The reads were then mapped to an NCBI reference genome using pbmm2, an official wrapper software for minimap2, to calculate interpulse duration ratios. Modification detection and motif prediction were performed using ipdSummary from the kineticsTools with default parameters. The workflow was performed as part of the SMRTLink v13.1.
+
 # Working Plan and things to do
 * ~~[JG] use protein fasta w/ StringDB to get functional classes (https://string-db.org/)~~ Results from StringDB not really useful since less structured
 * ~~[JG] use protein fasta directly with eggNogg to get GO categories (http://eggnog6.embl.de/)~~ -> eggNog-mapper done, this one is very useful (2025-02-05: new rds file in resources)
