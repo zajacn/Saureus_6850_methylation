@@ -20,7 +20,7 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
 * Add proteomics data (contrast, log2FC, T, FDR) to mtx data frame (all combinations of contrasts?)
 ** What contrasts shall be calculated? (all clones vs ancestor? irrespective of growing condition?)
 * Find very consistent methylations (found in all the 3 replicates) and indicate them in the mtx data frame
-** Here NZ reduced dataset to have it represented if and only if found in 2 out of 3 replicates from the same groupingConditions
+** ~~Here NZ reduced dataset to have it represented if and only if found in 2 out of 3 replicates from the same groupingConditions~~ -> done
 * Regions (from all strains) in the genome.. how "uniform" is the genome methylated? (white or black spots?)
 * PCA from this heatmap?
 * try to bring in categories for the genes based on eggNOGG or StringDB?
