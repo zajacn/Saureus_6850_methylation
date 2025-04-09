@@ -37,7 +37,13 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
 * Comparing the ancestor but also the clones (PASN vs TSB) -> each clone individually
 * 6mA (and 4mC) density per gene (no intergenics) # no difference with respect to conditions
 
-
+# Brainstorming 11/04/2025
+* LS: Think about how we would structure a potential manuscript
+      -> Idea is that in our previous proteomics paper we saw: Proteom mainly driven by environment rather then genotype --> How is this regulated? Our hypothesis = Methylation
+      -> I propose a Methylation centric approach
+          -> Focus on 6850_anc:    1. General Methylation pattern (TSB), Intergene distances, methylation density, Methylation in promoter regions
+                                   2. Compare 6850 (TSB) vs 6850 (SN): Where do we find differences
+                                   3. If we find differences, can we match these with proteomic data
 
 # Resources
 https://www.nature.com/articles/s41467-024-54033-3; (methylation in SA from Group X)
