@@ -39,8 +39,8 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
 
 # Brainstorming 11/04/2025
 * LS: Think about how we would structure a potential manuscript
-      - Idea is that in our previous proteomics paper we saw: Proteom mainly driven by environment rather then genotype --> How is this regulated? Our hypothesis = Methylation
-      - I propose a Methylation centric approach
+- Idea is that in our previous proteomics paper we saw: Proteom mainly driven by environment rather then genotype --> How is this regulated? Our hypothesis = Methylation
+- I propose a Methylation centric approach
           - Focus on 6850_anc:    1. General Methylation pattern (TSB), Intergene distances, methylation density, Methylation in promoter regions
                                    2. Compare 6850 (TSB) vs 6850 (SN): Where do we find differences
                                    3. If we find differences, can we match these with proteomic data
