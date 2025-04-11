@@ -24,7 +24,7 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
 * Regions (from all strains) in the genome.. how "uniform" is the genome methylated? (white or black spots?)
 * PCA from this heatmap?
 * try to bring in categories for the genes based on eggNOGG or StringDB?
-* we have evidence that we can filter for IPD ratio > 2.5 for m6A (there is a bimodal distribution)
+* we have evidence that we can filter for IPD ratio > 2.5 for m6A (there is a bimodal distribution) ..
 
 ## Questions to potentially adress
 * Intergene distances? (from gff -> NZ looks into it)
@@ -42,6 +42,7 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
     * Idea is that in our previous proteomics paper we saw: Proteom mainly driven by environment rather then genotype --> How is this regulated? Our hypothesis = Methylation
     * I propose a Methylation centric approach
         * Focus on 6850_anc: 1. General Methylation pattern (TSB), Intergene distances, methylation density, Methylation in promoter regions 2. Compare 6850 (TSB) vs 6850 (SN): Where do we find differences 3. If we find differences, can we match these with proteomic data
+* JG:
 
 # Resources
 https://www.nature.com/articles/s41467-024-54033-3; (methylation in SA from Group X)
