@@ -5,6 +5,7 @@
 # load libraries
 library(dplyr)
 library(readr)
+library(tidyr)
 
 # read in the data
 prX <- readRDS("SA6850_prXallWide_moreMetaInfo.rds")
@@ -20,6 +21,9 @@ prX_wMtX <- left_join(x = prX, y = mtX, by = c("LocusTag" = "locus_tag"))
 # join PrX 2 mtx
 mtX_wPrX <- left_join(x = mtX, y = prX, by = c("locus_tag" = "LocusTag"))
 
+
+
+# look into aspect of avg protein expression and methylation
 
 prX_wMtX$IPDRatio
 prX_wMtX$mean_iBAQ
@@ -85,6 +89,126 @@ write.table(na.omit(unique(Methylated$proteinID[Methylated$category == "downstre
 # https://version-12-0.string-db.org/cgi/network?networkId=bhZ55QMAsfUC
 # w/ adjusted BG
 # https://version-12-0.string-db.org/cgi/network?networkId=bbs5Y269mlOr
+
+
+# Look into "most methylated proteins".. GSEA ranked for IPD ratio and split for upstream, gene, downstream
+
+# upstream methylated
+upstream_methylated <- prX_wMtX[prX_wMtX$IPDRatio > IPDrThreshold &
+                                    prX_wMtX$category == "upstream",]
+# max_IPDratio <- prX_wMtX %>%
+#group_by(proteinID) %>%
+#    summarise(max_IPDratio = max(IPDRatio, na.rm = TRUE))
+
+upstream_methylated %>% reframe(AGU, max_IPDratio = max(IPDRatio, na.rm = TRUE), nCount = n()) |>
+    distinct()
+
+# Summarize data to get max IPDRatio per AGU and treatment
+max_ipd_perAGUnTreatment <- upstream_methylated %>%
+    group_by(AGU, treatment) %>%
+    summarize(max_IPDRatio = max(IPDRatio), .groups = "drop")
+
+# I would like to generate a log2 Ratio for maxIPDratio of the different treatments (PASN_vs_TSB)
+# Reshape to wide format (optional)
+max_ipd_wide <- max_ipd_perAGUnTreatment %>%
+    pivot_wider(names_from = treatment, values_from = max_IPDRatio)
+
+# Calculate log2 ratio
+max_ipd_log2Ratio <- max_ipd_wide %>%
+    mutate(log2_ratio = log2(PASN / TSB)) |> select(AGU, log2_ratio)
+write.table(max_ipd_log2Ratio, file = "max_ipd_log2Ratio.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
+
+
+# within gene methylated
+withinGene_methylated <- prX_wMtX[prX_wMtX$IPDRatio > IPDrThreshold &
+                                    prX_wMtX$category == "gene",]
+
+# Summarize data to get max IPDRatio per AGU and treatment
+max_ipd_perAGUnTreatment_gene <- withinGene_methylated %>%
+    group_by(AGU, treatment) %>%
+    summarize(max_IPDRatio = max(IPDRatio), .groups = "drop")
+
+# I would like to generate a log2 Ratio for maxIPDratio of the different treatments (PASN_vs_TSB)
+# Reshape to wide format (optional)
+max_ipd_wide_gene <- max_ipd_perAGUnTreatment_gene %>%
+    pivot_wider(names_from = treatment, values_from = max_IPDRatio)
+
+# Calculate log2 ratio
+max_ipd_log2Ratio_gene <- max_ipd_wide_gene %>%
+    mutate(log2_ratio = log2(PASN / TSB)) |> select(AGU, log2_ratio)
+write.table(max_ipd_log2Ratio_gene, file = "max_ipd_log2Ratio_gene.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
+# write out some more
+
+AGUmethInPASN <- max_ipd_wide_gene |> select(AGU, PASN)
+AGUmethInTSB <- max_ipd_wide_gene |> select(AGU, TSB)
+
+write.table(AGUmethInPASN, file = "AGUmethInPASN.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+write.table(AGUmethInTSB, file = "AGUmethInTSB.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
+# no string enrichment
+# https://version-12-0.string-db.org/cgi/globalenrichment?networkId=bC30fyhuXxZB
+
+# what are the AGU with largest maxIPDratio for PASN
+max_ipd_wide_gene %>% select(AGU, PASN) %>%
+    arrange(desc(PASN)) %>%
+    slice_head(n = 50) %>%
+    write.table(file = "topX_max_ipd_PASN.txt",
+                sep = "\t", row.names = FALSE, col.names = TRUE,
+                quote = FALSE)
+
+# what are the AGU with largest maxIPDratio for PASN
+max_ipd_wide_gene %>% select(AGU, TSB) %>%
+    arrange(desc(TSB)) %>%
+    slice_head(n = 50) %>%
+    write.table(file = "topX_max_ipd_TSB.txt",
+                sep = "\t", row.names = FALSE, col.names = TRUE,
+                quote = FALSE)
+
+# no enrichements but:
+# https://version-12-0.string-db.org/cgi/network?networkId=bwxieg8S7WEs
+# unknown network (max IPD for PASN)
+
+# no enrichment but..
+# https://version-12-0.string-db.org/cgi/network?networkId=blSaz901aEBe
+
+# summarize how often a protein is methylated
+Topcount_Methylated_gene <- prX_wMtX[prX_wMtX$IPDRatio > IPDrThreshold &
+             prX_wMtX$category == "gene",] %>%
+    select(proteinID, AGU, IPDRatio) %>% group_by(AGU) %>%
+    summarize(count = n(), .groups = "drop") %>% arrange(desc(count))
+write.table(Topcount_Methylated_gene, file = "Topcount_Methylated.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
+table(prX_wMtX$category)
+# summarize how often a protein is methylated
+Topcount_Methylated_upstream <- prX_wMtX[prX_wMtX$IPDRatio > IPDrThreshold &
+                                    prX_wMtX$category == "upstream",] %>%
+    select(proteinID, AGU, IPDRatio) %>% group_by(AGU) %>%
+    summarize(count = n(), .groups = "drop") %>% arrange(desc(count))
+write.table(Topcount_Methylated_upstream, file = "Topcount_Methylated_upstream.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
+# summarize how often a protein is methylated
+Topcount_Methylated_dwnstream <- prX_wMtX[prX_wMtX$IPDRatio > IPDrThreshold &
+                                             prX_wMtX$category == "downstream",] %>%
+    select(proteinID, AGU, IPDRatio) %>% group_by(AGU) %>%
+    summarize(count = n(), .groups = "drop") %>% arrange(desc(count))
+write.table(Topcount_Methylated_dwnstream, file = "Topcount_Methylated_dwnstream.txt",
+            sep = "\t", row.names = FALSE, col.names = TRUE,
+            quote = FALSE)
+
 
 
 # how about the other way around?
