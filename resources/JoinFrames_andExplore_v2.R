@@ -239,7 +239,7 @@ prXdata <- read_tsv("SA6850_prXallWide_moreMeta.tsv")
 
 POIs <- left_join(x = sortedHypRegionGenes, y = prXdata, by = c("Acc2" = "LocusTag"))
 
-write_tsv(POIs, "hypomethylated_genes_with_prXdata.tsv")
+write_tsv(POIs, "hypomethylated_genes_with_prXdata_top10PlusStrand.tsv")
 # stringEnrichment
 # Now it starts to get interesting:
 # https://version-12-0.string-db.org/cgi/network?networkId=bYUQmgbHc0w9

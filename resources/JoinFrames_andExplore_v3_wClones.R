@@ -93,6 +93,8 @@ ggplot(methylation_data, aes(x = start)) +
     ) +
     theme_minimal() +
     geom_hline(yintercept = 0, linetype = "dashed")
+# save plot
+ggsave("methylation_density_plot_SB0804_PASN.png", width = 10, height = 6)
 
 
 # as hist
