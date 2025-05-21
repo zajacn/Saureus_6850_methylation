@@ -41,6 +41,10 @@ smoothScatter(x = prX_wMtX$IPDRatio, y = log10(prX_wMtX$mean_iBAQ),
                main = "IPD ratio vs mean_iBAQ",
                pch = ".")
 
+plot(x = prX_wMtX$IPDRatio, y = log10(prX_wMtX$mean_iBAQ),
+     xlab = "IPD ratio", ylab = "mean_iBAQ",
+     main = "IPD ratio vs mean_iBAQ",
+     pch = ".", cex = (log10(prX_wMtX$mean_iBAQ+0.1)/2), col = "blue")
 
 # Interesting pattern visible that some expressed proteins have IPDratios >4
 # What are these? any functional enrichment?
@@ -255,6 +259,9 @@ methylated_proteins_group$group <- cut(log10(methylated_proteins_group$mean_iBAQ
                                          include.lowest = TRUE)
 table(methylated_proteins_group$group)
 
+
+
+
 # write the methylated proteins in each group to a file
 length(unique(methylated_proteins_group$proteinID[methylated_proteins_group$group == "very low"]))
 write.table(unique(methylated_proteins_group$proteinID[methylated_proteins_group$group == "very low"]),
@@ -306,6 +313,7 @@ max_IPDratio <- prX_wMtX %>%
 write.table(na.omit(max_IPDratio), file = "max_IPDratio.txt",
             sep = "\t", row.names = FALSE, col.names = TRUE,
             quote = FALSE)
+
 
 # summarize IPD ratio for each proteinID how often is it >4
 IPDratio_summary <- prX_wMtX %>% select(proteinID, IPDRatio) %>% distinct() %>%
