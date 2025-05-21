@@ -282,7 +282,7 @@ ggsave(fN, width = 10, height = 6)
 hist(log10(prXdata$mean_iBAQ))
 hist(log10(genes_w_proteinExpression_in_hypoRegions$mean_iBAQ))
 
-# combine these 2 histograms
+# combine these 2 histograms all iBAQs vs hypo iBAQs
 ggplot() +
     geom_histogram(data = prXdata,
                    aes(x = log10(mean_iBAQ), y = after_stat(count), fill = "All Proteins"),
