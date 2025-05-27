@@ -47,9 +47,9 @@ mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID,
 TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
 PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
 
 p1 + p2
 ```
@@ -70,13 +70,13 @@ PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 &
 TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
 PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
 
-p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
 
-p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
 
 p1 + p2 + p3 + p4
 ```
@@ -96,9 +96,9 @@ mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID,
 TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
 PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
 
 p1 + p2
 ```
@@ -119,13 +119,13 @@ PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 &
 TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
 PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
 
-p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
 
-p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
 
 p1 + p2 + p3 + p4
 ```
@@ -145,9 +145,9 @@ mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID,
 TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
 PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
 
 p1 + p2
 ```
@@ -170,13 +170,13 @@ PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 &
 TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
 PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
 
-p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
 
-p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
 
-p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
 
-p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),] %>% ggplot(aes(diff.PASNvsTSB_givenAncestor, -log10(p.value.PASNvsTSB_givenAncestor))) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
 
 p1 + p2 + p3 + p4
 ```
