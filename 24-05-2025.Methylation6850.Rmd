@@ -63,6 +63,22 @@ mtx_sub = mtx_sub[mtx_sub$category == "gene",]
 mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
 mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
 ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m4C",]$label
+PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m4C",]$label
+TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
+PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+
+p1 + p2 + p3 + p4
 ```
 
 
@@ -96,6 +112,22 @@ mtx_sub = mtx_sub[mtx_sub$category == "upstream",]
 mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
 mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
 ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB,color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m4C",]$label
+PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m4C",]$label
+TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
+PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+
+p1 + p2 + p3 + p4
 ```
 
 
@@ -131,4 +163,56 @@ mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
 mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
 ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
 
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m4C",]$label
+PASN_hypomethylated_m4C = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m4C",]$label
+TSB_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001 & mtx_sub$feature == "m6A",]$label
+PASN_hypomethylated_m6A = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001 & mtx_sub$feature == "m6A",]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m6A")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m6A,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m6A")
+
+p3 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated_m4C")
+
+p4 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated_m4C,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated_m4C")
+
+p1 + p2 + p3 + p4
+```
+
+
+## 6850 PASN vs TSB methylation per EGGNOG category
+
+```{r, echo=FALSE, warning=FALSE}
+mtx_sub = mtx_annot[mtx_annot$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26,37)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "gene",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, eggNOG_OGs, feature) %>% summarise(sites = n_distinct(start)) %>% pivot_wider(values_from = sites, names_from = treatment) %>% filter(group == "6850")
+ggplot(mtx_sub,aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + ggtitle("eggNOG_OGs")
+```
+
+
+## 6850 PASN vs TSB methylation per KEGG_ko category
+
+```{r, echo=FALSE, warning=FALSE}
+mtx_sub = mtx_annot[mtx_annot$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26,44)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "gene",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, KEGG_ko, feature) %>% summarise(sites = n_distinct(start)) %>% pivot_wider(values_from = sites, names_from = treatment) %>% filter(group == "6850")
+ggplot(mtx_sub,aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + ggtitle("KEGG_ko")
+```
+
+
+## 6850 PASN vs TSB methylation per PFAM category
+
+```{r, echo=FALSE, warning=FALSE}
+mtx_sub = mtx_annot[mtx_annot$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26,53)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "gene",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, PFAMs, feature) %>% summarise(sites = n_distinct(start)) %>% pivot_wider(values_from = sites, names_from = treatment) %>% filter(group == "6850")
+ggplot(mtx_sub,aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + ggtitle("PFAMS")
 ```
