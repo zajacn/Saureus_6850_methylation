@@ -1,0 +1,134 @@
+---
+title:  "Saureus methylation"
+author: "Natalia Zajac"
+output:
+  html_document: 
+    highlight: pygments
+    theme: sand
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+editor_options: 
+  chunk_output_type: inline
+---
+
+Started on `r format(Sys.time(), "%Y-%m-%d %H:%M:%S")`
+
+```{r setup, echo=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+library(rtracklayer)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(cowplot)
+library(patchwork)
+library(data.table)
+library(ezRun)
+library(ggrepel)
+
+mtx = readRDS("resources/methylation_data.rds")
+mtx_annot = readRDS("resources/methylation_data_EGGnogAnnotated.rds")
+prot = readRDS("resources/SA6850_prXallWide_moreMetaInfo.rds")
+```
+
+# {.tabset}
+
+## 6850 PASN vs TSB methylation per gene
+
+```{r , echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "gene",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-4,-5)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
+PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+
+p1 + p2
+```
+
+## 6850 PASN vs TSB methylation per gene by category
+
+```{r , echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "gene",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+```
+
+
+## 6850 PASN vs TSB methylation per upstream of gene
+
+```{r , echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "upstream",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-4,-5)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
+PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+
+p1 + p2
+```
+
+## 6850 PASN vs TSB methylation per upstream of gene by category
+
+```{r , echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "upstream",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB,color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+```
+
+
+## 6850 PASN vs TSB methylation per downstream of gene
+
+```{r , echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "downstream",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-4,-5)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+mtx_sub = mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, ""))
+TSB_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$TSB == 0.0001,]$label
+PASN_hypomethylated = mtx_sub[mtx_sub$label != "" & mtx_sub$PASN == 0.0001,]$label
+
+p1 = prot[prot$LocusTag %in% str_remove(PASN_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("PASN_hypomethylated")
+
+p2 = prot[prot$LocusTag %in% str_remove(TSB_hypomethylated,"gene-"),c(28, 39, 56, 58)] %>% ggplot(aes(FDR.PASNvsTSB_givenAncestor, p.value.PASNvsTSB_givenAncestor)) + geom_point() + ylim(0,0.05) + geom_label_repel(aes(label = gene)) + ggtitle("TSB_hypomethylated")
+
+p1 + p2
+```
+
+
+## 6850 PASN vs TSB methylation per downstream of gene by category
+
+```{r, echo=FALSE, warning=FALSE}
+mtx_sub = mtx[mtx$feature %in% c("m6A", "m4C"),c(1,2,3,5,9,10,24,26)]
+mtx_sub = mtx_sub[!is.na(mtx_sub$ID),]
+mtx_sub = mtx_sub[mtx_sub$category == "downstream",]
+mtx_sub$gene_len = mtx_sub$gene_end - mtx_sub$gene_start
+mtx_sub = mtx_sub %>% group_by(treatment, group, ID, feature) %>% summarise(n_distinct(start), mean(gene_len)) %>% mutate(prop_methylated = `n_distinct(start)`/`mean(gene_len)`) %>% dplyr::select(c(-5,-6)) %>% pivot_wider(values_from = prop_methylated, names_from = treatment) %>% filter(group == "6850") %>% replace(is.na(.), 0.0001) 
+ggplot(mtx_sub %>% mutate(label = if_else(PASN == 0.0001 | TSB == 0.0001, ID, "")),aes(PASN,TSB, color = feature)) + geom_point() + scale_x_log10() + scale_y_log10() + geom_abline() + geom_label_repel(aes(label = label), max.overlaps = 50)
+
+```
