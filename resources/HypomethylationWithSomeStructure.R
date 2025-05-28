@@ -47,6 +47,10 @@ mtX <- readRDS("methylation_data_EGGnogAnnotated.rds")
 biocycSA6850 <- read_tsv("Biocyc_allGenesSA6850.txt")
 colnames(biocycSA6850) <- c("geneName", "Acc1", "start", "end", "product", "strand", "GOBP", "GOMF", "pw", "Acc2")
 
+# what do we have in prX
+colnames(prX)
+
+
 biocycSA6850_slim <- biocycSA6850 %>%
     select(Acc2, start, end, strand) %>%
     mutate(start = as.numeric(start), end = as.numeric(end))
