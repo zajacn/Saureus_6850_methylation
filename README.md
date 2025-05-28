@@ -49,3 +49,4 @@ https://www.nature.com/articles/s41467-024-54033-3; (methylation in SA from Grou
 https://www.nature.com/articles/srep29390 (methylation in SA from Group X)
 https://journals.asm.org/doi/full/10.1128/mbio.01773-24 #conserved 50S ribosomal protein methylation 
 https://www.nature.com/articles/s41467-023-38291-1 #conserved pattern of 6mA across 28 strains of L.paracasei
+https://pmc.ncbi.nlm.nih.gov/articles/PMC11544029/ #genomic methylation promotes SA persistance, they found 6mA but needed to adjust their seq for 4mC
