@@ -1,29 +1,31 @@
+#!/usr/local/bin/Rscript
+#
+# Jonas Grossmann <jg@fgcz.ethz.ch>
+# 2025
+#
+#
 # 2025-05-28
 # this script is used to join the prX data with the methylation data
-# storing the results in the resources folder is too big
 
 # load libraries
 library(dplyr)
 library(readr)
 library(tidyr)
 library(ggplot2)
+library(purrr)
 
 # read in the data
 prX <- readRDS("SA6850_prXallWide_moreMetaInfo.rds")
 mtX <- readRDS("methylation_data_EGGnogAnnotated.rds")
 
 # here mtX centric
-# join PrX 2 mtx
 mtX_wPrX <- left_join(x = mtX, y = prX, by = c("locus_tag" = "LocusTag"))
-
-
-
 
 # what catetories are there
 table(mtX_wPrX$category)
 
 # category of Interest
-COI <- "downstream"
+COI <- "_regulatoryRegions"
 
 
 # we want to filter out modified_base -> it is unclear what type of feature it is
@@ -34,22 +36,18 @@ table(mtX_wPrX$category)
 # filter for Ancestor only
 unique(mtX_wPrX$group)
 
-# anyway we are only looking into ancestor
+# anyway we are only looking into ancestor (the rest is for students of Bio253)
 mtX_wPrX <- mtX_wPrX[mtX_wPrX$group == "6850",]
 
-# we are only interested in one type features
-mtX_wPrX <- mtX_wPrX[mtX_wPrX$category == COI,]
+# HERE we are only interested in one type features
+mtX_wPrX <- mtX_wPrX[mtX_wPrX$category != "intergenic",]
+mtX_wPrX <- mtX_wPrX[mtX_wPrX$category != "gene",]
 table(mtX_wPrX$feature)
 table(mtX_wPrX$category)
 
 # we are only interested in the TSB treatment
-condition_of_interest <- "TSB"
-mtX_wPrX_OneTreatment <- mtX_wPrX[mtX_wPrX$treatment == condition_of_interest,]
-
-# now summarize per AGU and treatment
-table(mtX_wPrX_OneTreatment$feature)
-table(mtX_wPrX_OneTreatment$category)
-
+#condition_of_interest <- "TSB"
+#mtX_wPrX_OneTreatment <- mtX_wPrX[mtX_wPrX$treatment == condition_of_interest,]
 
 
 
@@ -68,66 +66,51 @@ table(mtX_wPrX_OneTreatment$category)
 #     1.       Focus on Ancestor_TSB only
 # a.       Describe the global methylation pattern of SA6850 (what is methylated, how is it methylated, hyper vs hypo methylation,6mA vs 4mC)
 
+# make df more manageable
 # slim
 methylation_slim <- mtX_wPrX %>% select(treatment, start, strand, feature, locus_tag) |> distinct() # here we do have multiple reps in
 
 # for the plotting
-clone_of_interest <- "Ancestor 6850"
+clone_of_interest <- "Ancestor6850"
 
 
-
+smoothin_param <- 0.01
 # visualize data as density on the chromosome with start as position
 # Create the density plot with proper direction based on strand
 ggplot(methylation_slim, aes(x = start)) +
     geom_density(data = subset(methylation_slim, strand == "+"),
                  aes(y = after_stat(density), fill = strand),
-                 alpha = 0.5, adjust = 0.01) +  # <-- less smoothing) +
+                 alpha = 0.5, adjust = smoothin_param) +  # <-- less smoothing) +
     geom_density(data = subset(methylation_slim, strand == "-"),
                  aes(y = -after_stat(density), fill = strand),
                  alpha = 0.5,
-                 adjust = 0.01) +  # <-- less smoothing) +
+                 adjust = smoothin_param) +  # <-- less smoothing) +
     scale_fill_manual(values = c("+" = "blue", "-" = "red")) +
     labs(
-        title = "Density of m6A Methylation Sites by Strand",
+        title = "Density of Methylation Sites by Strand",
         x = "Chromosome Position",
         y = "Density",
         fill = "Strand"
     ) +
     theme_minimal() +
     geom_hline(yintercept = 0, linetype = "dashed")
-
-# stat density
-ggplot(methylation_slim, aes(x = start)) +
-    stat_density(data = subset(methylation_slim, strand == "+"),
-                 aes(y = after_stat(density), fill = strand),
-                 alpha = 0.5) +
-    stat_density(data = subset(methylation_slim, strand == "-"),
-                 aes(y = -after_stat(density), fill = strand),
-                 alpha = 0.5) +
-    scale_fill_manual(values = c("+" = "blue", "-" = "red")) +
-    labs(
-        title = "Density of m6A Methylation Sites by Strand",
-        x = "Chromosome Position",
-        y = "Density",
-        fill = "Strand"
-    ) +
-    theme_minimal() +
-    geom_hline(yintercept = 0, linetype = "dashed")
-
-
+(fN <- paste("Methylation_hist_on_Chromosome", clone_of_interest, "_category_", COI, ".png", sep = ""))
+# save the plot
+ggsave(fN, width = 10, height = 6)
 
 # as hist -> much better
 # Histogram approach
+nBinSize <- 5000 # number of bins
 ggplot() +
     geom_histogram(data = subset(methylation_slim, strand == "+"),
                    aes(x = start, y = after_stat(count), fill = strand),
-                   alpha = 0.5, bins = 1500) +
+                   alpha = 0.5, bins = nBinSize) +
     geom_histogram(data = subset(methylation_slim, strand == "-"),
                    aes(x = start, y = -after_stat(count), fill = strand),
-                   alpha = 0.5, bins = 1500) +
+                   alpha = 0.5, bins = nBinSize) +
     scale_fill_manual(values = c("+" = "blue", "-" = "red")) +
     labs(
-        title = paste0("Distribution of Methylation Sites by Strand (",clone_of_interest," ",condition_of_interest,")"),
+        title = paste0("Distribution of Methylation Sites by Strand ",clone_of_interest, "_category", COI),
         x = "Chromosome Position",
         y = "Count (+ strand up, - strand down)",
         fill = "Strand"
@@ -135,13 +118,10 @@ ggplot() +
     theme_minimal() +
     geom_hline(yintercept = 0, linetype = "dashed")
 
-(fN <- paste("Methylation_hist_on_Chromosome_allFeatures", clone_of_interest, "_", condition_of_interest, ".png", sep = ""))
+(fN <- paste("Methylation_hist_on_Chromosome_", clone_of_interest, "_category", COI, ".png", sep = ""))
 # save the plot
 ggsave(fN, width = 10, height = 6)
 
-
-# now we want to summarize the methylation data
-str(methylation_slim)
 
 # Check what treatments we have
 table(methylation_slim$treatment)
@@ -169,6 +149,9 @@ methylation_slim %>%
     theme_minimal() +
     labs(title = "Strand Distribution by Treatment",
          x = "Treatment", y = "Number of Sites")
+#save plot
+(fN <- paste("Methylation_strand_by_Treatment", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # Which loci are affected differently by treatments?
 locus_treatment_summary <- methylation_slim %>%
@@ -179,7 +162,7 @@ locus_treatment_summary <- methylation_slim %>%
 head(locus_treatment_summary) # take out here regions with no counts
 # Filter for loci with significant differences
 
-#
+# loci not methylated
 notMethylatedInPASN <- locus_treatment_summary %>%
     filter(PASN == 0) |> select(locus_tag) |> distinct()
 
@@ -190,21 +173,20 @@ notMethylatedInTSB <- locus_treatment_summary %>%
 # bring in AGU
 desc <- readRDS("descFasta.rds")
 # write desc out
-write_tsv(desc, file = "all_GenesdescFasta.tsv")
+#write_tsv(desc, file = "all_GenesdescFasta.tsv")
 
-notMethylatedInPASN <- left_join(notMethylatedInPASN, desc, by = c("locus_tag" = "LocusTag"))
-notMethylatedInTSB <- left_join(notMethylatedInTSB, desc, by = c("locus_tag" = "LocusTag"))
-
-
-
-
-# write to file
-write_tsv(x = notMethylatedInPASN |> select(proteinID), file = "notMethylatedInPASN_AGU.tsv")
-write_tsv(x = notMethylatedInTSB |> select(proteinID), file = "notMethylatedInTSB_AGU.tsv")
-
-write_tsv(x = notMethylatedInPASN, file = "notMethylatedInPASN.tsv")
-write_tsv(x = notMethylatedInTSB, file = "notMethylatedInTSB.tsv")
-
+# notMethylatedInPASN <- left_join(notMethylatedInPASN, desc, by = c("locus_tag" = "LocusTag"))
+# notMethylatedInTSB <- left_join(notMethylatedInTSB, desc, by = c("locus_tag" = "LocusTag"))
+#
+#
+# # write to file for StringDB
+# write_tsv(x = notMethylatedInPASN |> select(proteinID), file = "notMethylatedInPASN_AGU.tsv")
+# write_tsv(x = notMethylatedInTSB |> select(proteinID), file = "notMethylatedInTSB_AGU.tsv")
+#
+# # to check it
+# write_tsv(x = notMethylatedInPASN, file = "notMethylatedInPASN.tsv")
+# write_tsv(x = notMethylatedInTSB, file = "notMethylatedInTSB.tsv")
+#
 
 # chromosome visualization
 # Prepare data for chromosome visualization
@@ -274,10 +256,13 @@ print(chromosome_plot)
 #Optional: Create a zoomed-in version for a specific region
 #Uncomment and adjust the range as needed
 zoom_plot <- chromosome_plot +
-  coord_cartesian(xlim = c(1.2E6, 1.4E6)) +
-  labs(title = "Methylation Sites - Zoomed View")
+    coord_cartesian(xlim = c(1.2E6, 1.4E6)) +
+    labs(title = "Methylation Sites - Zoomed View")
 
 print(zoom_plot)
+# save plot
+(fN <- paste("zoomed_Methylation_Chromosome_Plots_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # Summary statistics
 cat("Summary of methylation sites by treatment and strand:\n")
@@ -301,9 +286,6 @@ methylation_slim %>%
 
 
 # visualize more
-library(dplyr)
-library(ggplot2)
-library(tidyr)
 
 # Get treatment names
 treatments <- unique(methylation_slim$treatment)
@@ -338,10 +320,19 @@ faceted_plot <- methylation_slim %>%
 
 print(faceted_plot)
 
+zoom_plot2 <- faceted_plot +
+    coord_cartesian(xlim = c(1.2E6, 1.4E6)) +
+    labs(title = "Methylation Sites - Zoomed View")
+
+print(zoom_plot2)
+# save plot
+(fN <- paste("Methylation_SideBySide_Chromosome_Plots_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
+
 # 2. DENSITY PLOTS - Shows methylation density along the chromosome
 density_plot <- methylation_slim %>%
     ggplot(aes(x = start, fill = treatment, color = treatment)) +
-    geom_density(alpha = 0.6, size = 1) +
+    geom_density(alpha = 0.6, size = 1, adjust = smoothin_param) +
     facet_wrap(~ strand, ncol = 1, labeller = label_both) +
     scale_fill_manual(values = c("#E31A1C", "#1F78B4")) +
     scale_color_manual(values = c("#E31A1C", "#1F78B4")) +
@@ -405,6 +396,9 @@ diff_plot <- methylation_binned %>%
     )
 
 print(diff_plot)
+# save plot
+(fN <- paste("Methylation_Differential_Plots_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # TREATMENT-SPECIFIC SITES
 # Find sites that are unique or highly enriched in one treatment
@@ -424,22 +418,22 @@ treatment_comparison <- methylation_slim %>%
             TRUE ~ "None"
         )
     )
-
-# Plot treatment-specific sites
-specific_plot <- treatment_comparison %>%
-    filter(site_type != "None") %>%
-    ggplot(aes(x = start, y = strand, color = site_type)) +
-    geom_point(alpha = 0.7, size = 1.5) +
-    scale_color_manual(values = c("#E31A1C", "#1F78B4", "#FF7F00")) +
-    theme_minimal() +
-    labs(
-        title = "Treatment-Specific vs Shared Methylation Sites",
-        x = "Genomic Position (bp)",
-        y = "Strand",
-        color = "Site Type"
-    )
-
-print(specific_plot)
+#
+# # Plot treatment-specific sites
+# specific_plot <- treatment_comparison %>%
+#     filter(site_type != "None") %>%
+#     ggplot(aes(x = start, y = strand, color = site_type)) +
+#     geom_point(alpha = 0.7, size = 1.5) +
+#     scale_color_manual(values = c("#E31A1C", "#1F78B4", "#FF7F00")) +
+#     theme_minimal() +
+#     labs(
+#         title = "Treatment-Specific vs Shared Methylation Sites",
+#         x = "Genomic Position (bp)",
+#         y = "Strand",
+#         color = "Site Type"
+#     )
+#
+# print(specific_plot)
 
 # 5. SUMMARY STATISTICS
 cat("\n=== TREATMENT COMPARISON SUMMARY ===\n")
@@ -482,11 +476,6 @@ methylation_slim %>%
 
 
 # Now let's look at GAPs that are different between treatments.
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(purrr)
-
 # Function to calculate gaps between methylation sites
 calculate_gaps <- function(data, treatment_name, strand_name) {
     sites <- data %>%
@@ -545,6 +534,9 @@ gap_distribution <- all_gaps %>%
     )
 
 print(gap_distribution)
+# save plot
+(fN <- paste("Gap_Length_Distribution_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # 2. GAP LENGTHS AS CHROMOSOME VIEW
 # Show gaps as blocks along the chromosome
@@ -586,7 +578,7 @@ gap_chromosome <- all_gaps %>%
 
 print(gap_chromosome)
 
-# 3. TREATMENT-SPECIFIC GAPS
+# 3. TREATMENT-SPECIFIC GAPS --> there must be a bug here .. we always only get PASN specific gaps!
 # Find gaps that exist in one treatment but not the other
 gap_comparison <- all_gaps %>%
     # Create overlapping windows to find similar gaps
@@ -613,6 +605,7 @@ gap_comparison <- all_gaps %>%
     )
 
 # Plot treatment-specific gaps
+table(gap_comparison$gap_type)
 specific_gaps_plot <- gap_comparison %>%
     filter(gap_type != "Other") %>%
     ggplot(aes(x = (min_start + max_end)/2, y = avg_gap_length, color = gap_type)) +
@@ -629,10 +622,13 @@ specific_gaps_plot <- gap_comparison %>%
     )
 
 print(specific_gaps_plot)
+# save plot
+(fN <- paste("Gap_Treatment_Specificity_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # 4. LARGE GAP ANALYSIS
 # Focus on the biggest gaps and see how they differ
-large_gaps_threshold <- quantile(all_gaps$gap_length, 0.9)  # Top 10% of gaps
+(large_gaps_threshold <- quantile(all_gaps$gap_length, 0.95))  # Top 5% of gaps)
 
 large_gaps <- all_gaps %>%
     filter(gap_length >= large_gaps_threshold) %>%
@@ -653,6 +649,9 @@ large_gaps_plot <- large_gaps %>%
     )
 
 print(large_gaps_plot)
+# save plot
+(fN <- paste("Large_Gaps_Analysis_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # 5. STATISTICAL SUMMARY
 cat("\n=== GAP ANALYSIS SUMMARY ===\n")
@@ -698,7 +697,6 @@ large_gaps %>%
 
 # invoke here new file to get locus_tags that are in these gaps.
 
-
 # Statistical test for gap length differences
 if(length(treatments) == 2) {
     gap1 <- all_gaps %>% filter(treatment == treatments[1]) %>% pull(gap_length)
@@ -716,12 +714,7 @@ if(length(treatments) == 2) {
 
 # invoke locus tag in these gaps
 head(desc)
-# significance = case_when(
-#     FDR < 0.05 & diff > 1 ~ "Up",
-#     FDR < 0.05 & diff < -1 ~ "Down",
-#     TRUE ~ "Not Significant"
-# )
-
+# prepare desc
 desc$strand <- "+"
 desc$strand[grepl("complement", desc$location)] <- "-"
 table(desc$strand)
@@ -729,12 +722,8 @@ desc$location_1 <- gsub(x = gsub(x = desc$location, pattern = "complement\\(", r
 desc$geneStart <- as.numeric(sapply(strsplit(desc$location_1, split = "\\.\\."), function(x)x[1]))
 desc$geneEnd <- as.numeric(sapply(strsplit(desc$location_1, split = "\\.\\."), function(x)x[2]))
 desc$location_1 <- NULL
+
 # now we want to join the gaps with the desc
-#
-# library(dplyr)
-# library(ggplot2)
-# library(tidyr)
-# library(purrr)
 
 # Function to find genes overlapping with gaps
 find_overlapping_genes <- function(gaps_df, genes_df) {
@@ -824,14 +813,17 @@ if("strand" %in% names(all_gaps)) {
 }
 
 # Focus on only the TOP 10 LARGEST gaps per treatment
+# top X gaps
+nTopGaps <- 20
 top_gaps <- all_gaps %>%
     group_by(treatment) %>%
     arrange(desc(gap_length)) %>%
-    slice_head(n = 10) %>%
+    slice_head(n = nTopGaps) %>%
     ungroup()
 
 # write out top_gaps
-write_tsv(top_gaps, file = "top_10_largest_methylation_gaps_perTreatment.tsv")
+(fN <- paste("top_", nTopGaps, "_largest_methylation_gaps_perTreatment_", clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(top_gaps, file = fN)
 
 cat("=== FOCUSING ON TOP 10 LARGEST GAPS PER TREATMENT ===\n")
 cat("Top gaps by treatment:\n")
@@ -848,7 +840,8 @@ top_gaps %>%
 # Find genes overlapping with ONLY the top gaps
 genes_in_gaps <- find_overlapping_genes(top_gaps, desc)
 # write out
-write_tsv(genes_in_gaps, file = "genes_in_top_methylation_gaps.tsv") # verified by jonas the first 2 gaps are correct still some caps are in PASN AND TSB
+(fN <- paste("genes_in_top_methylation_gaps_",clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(genes_in_gaps, file = fN) # verified by jonas the first 2 gaps are correct still some caps are in PASN AND TSB
 
 
 cat("=== GENES IN TOP METHYLATION GAPS ANALYSIS ===\n")
@@ -874,7 +867,7 @@ genes_by_treatment %>%
     count(gap_treatment, name = "genes_affected") %>%
     print()
 
-# some bu here
+# some bug here
 # 2. TREATMENT-SPECIFIC GENE EFFECTS
 # Find genes that are in gaps in one treatment but not the other
 treatment_specific_genes <- genes_by_treatment %>%
@@ -903,8 +896,8 @@ treatment_specific_genes$gene_gap_pattern <- NULL
 
 # 3. VISUALIZATION: TOP GAPS AND THEIR GENES
 top_gaps_plot <- top_gaps %>%
-    ggplot(aes(x = gap_start, y = gap_treatment, color = gap_treatment)) +
-    geom_segment(aes(xend = gap_end, yend = gap_treatment), size = 4, alpha = 0.8) +
+    ggplot(aes(x = gap_start, y = treatment, color = treatment)) +
+    geom_segment(aes(xend = gap_end, yend = treatment), size = 4, alpha = 0.8) +
     geom_text(aes(x = (gap_start + gap_end)/2, label = paste0(round(gap_length/1000, 1), "kb")),
               vjust = -0.5, size = 3) +
     scale_color_manual(values = c("#E31A1C", "#1F78B4")) +
@@ -918,6 +911,9 @@ top_gaps_plot <- top_gaps %>%
     )
 
 print(top_gaps_plot)
+# save plot
+(fN <- paste("Top_Gaps_Per_Treatment_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 10, height = 6)
 
 # Plot genes within these top gaps
 if(nrow(genes_in_gaps) > 0) {
@@ -1001,24 +997,6 @@ genes_in_gaps %>%
     head(20) %>%
     print()
 
-# 7. TREATMENT-SPECIFIC AFFECTED GENES
-treatments <- unique(genes_in_gaps$gap_treatment)
-if(length(treatments) == 2) {
-    cat(sprintf("\nGenes affected ONLY in %s:\n", treatments[1]))
-    treatment_specific_genes %>%
-        filter(gene_gap_pattern == paste("Only", treatments[1])) %>%
-        select(LocusTag, gene_description) %>%
-        head(10) %>%
-        print()
-
-    cat(sprintf("\nGenes affected ONLY in %s:\n", treatments[2]))
-    treatment_specific_genes %>%
-        filter(gene_gap_pattern == paste("Only", treatments[2])) %>%
-        select(LocusTag, gene_description) %>%
-        head(10) %>%
-        print()
-}
-
 # 9. DETAILED LIST OF TOP GAPS WITH GENES
 cat("\n=== DETAILED TOP GAPS WITH GENES ===\n")
 top_gaps_with_genes <- top_gaps %>%
@@ -1057,7 +1035,7 @@ cat("\n=== FINAL SUMMARY OF GAP ANALYSIS ===\n")
 cat(sprintf("Total gaps analyzed: %d\n", nrow(all_gaps)))
 cat(sprintf("Total unique genes affected: %d\n", length(unique(genes_in_gaps$LocusTag))))
 cat(sprintf("Total gaps with genes: %d\n", nrow(genes_in_gaps)))
-cat(sprintf("Total gaps in top 10 largest gaps: %d\n", nrow(top_gaps)))
+cat(sprintf("Total gaps in top X largest gaps: %d\n", nrow(top_gaps)))
 cat(sprintf("Total genes in top gaps: %d\n", nrow(genes_in_gaps)))
 
 
@@ -1093,12 +1071,14 @@ TSBspecificGenesInGaps <- treatment_specific_genes |> filter(PASN=="absent", TSB
 # join with prX_anc
 PASNspecific_proteinExpression <- PASNspecificGenesInGaps |> left_join(prX_anc, by = "LocusTag")
 TSBspecific_proteinExpression <- TSBspecificGenesInGaps |> left_join(prX_anc, by = "LocusTag")
+
 # write out
-write_tsv(PASNspecific_proteinExpression, file = "PASN_specificGaps_withProteinExpressionData.tsv")
-write_tsv(TSBspecific_proteinExpression, file = "TSB_specificGaps_withProteinExpressionData.tsv")
+(fN <- paste("PASN_specificGaps_withProteinExpressionData_", clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(PASNspecific_proteinExpression, file = fN)
+(fN <- paste("TSB_specificGaps_withProteinExpressionData_", clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(TSBspecific_proteinExpression, file = fN)
 
 # Visualize the Diffs as barplots
-library(ggplot2)
 # Barplot for PASN-specific genes in gaps
 p1 <- ggplot(PASNspecific_proteinExpression, aes(x = reorder(LocusTag, diff.PASNvsTSB_givenAncestor), y = diff.PASNvsTSB_givenAncestor)) +
     geom_bar(stat = "identity", fill = "steelblue") +
@@ -1122,21 +1102,18 @@ print(p2)
 # generate input files for StringDB
 stringTSB_gappedProteins <- TSBspecific_proteinExpression %>%
     select(AGU, diff.PASNvsTSB_givenAncestor) |> filter(!is.na(AGU))
-write_tsv(stringTSB_gappedProteins, file = "TSB_specific_gapped_proteins.tsv", col_names = FALSE)
+(fN <- paste("TSB_specific_gapped_proteins_", clone_of_interest, "_category", COI, "_stringDB.tsv", sep = ""))
+write_tsv(stringTSB_gappedProteins, file = fN, col_names = FALSE)
 
 stringPASN_gappedProteins <- PASNspecific_proteinExpression %>%
     select(AGU, diff.PASNvsTSB_givenAncestor) |> filter(!is.na(AGU))
-write_tsv(stringPASN_gappedProteins, file = "PASN_specific_gapped_proteins.tsv", col_names = FALSE)
+(fN <- paste("PASN_specific_gapped_proteins_", clone_of_interest, "_category", COI, "_stringDB.tsv", sep = ""))
+write_tsv(stringPASN_gappedProteins, file = fN, col_names = FALSE)
+
 
 hist(PASNspecific_proteinExpression$diff.PASNvsTSB_givenAncestor, breaks = 50, main = "PASN-Specific Gap Differences", xlab = "Difference (PASN - TSB)", col = "steelblue")
 hist(TSBspecific_proteinExpression$diff.PASNvsTSB_givenAncestor, breaks = 50, main = "TSB-Specific Gap Differences", xlab = "Difference (PASN - TSB)", col = "darkorange")
 
-# stringNW
-# PASN specific genes in gaps
-# https://version-12-0.string-db.org/cgi/network?networkId=b7IpYyVSFwHn
-
-# TSB specific genes in gaps
-# https://version-12-0.string-db.org/cgi/network?networkId=bO2HUdvD4PMN
 
 # where are the changes happening on PrX
 
@@ -1144,3 +1121,51 @@ boxplot(PASNspecific_proteinExpression$diff.PASNvsTSB_givenAncestor, main = "uni
         ylab = "Difference (PASN - TSB)", col = c("steelblue", "darkorange") ,
         TSBspecific_proteinExpression$diff.PASNvsTSB_givenAncestor)
 axis(side = 1, at = 1:2, labels = c("PASN-specific", "TSB-specific"), tick = FALSE)
+# save the boxplot
+(fN <- paste("PASN_TSB_specific_GAPs_boxplot_", clone_of_interest, "_category", COI, ".png", sep = ""))
+ggsave(fN, width = 8, height = 6)
+
+
+# rejoin again w/ desc to get AGU for all locus_tags
+treatment_specific_genes_n_proteins <- treatment_specific_genes %>%
+    left_join(desc, by = "LocusTag") |> left_join(prX_anc, by = "LocusTag")
+treatment_specific_genes_n_proteins$proteinID2 <- NULL
+
+# if diff.PASNvsTSB_givenAncestor is NA, then set it to 0
+treatment_specific_genes_n_proteins$diff.PASNvsTSB_givenAncestor[is.na(treatment_specific_genes_n_proteins$diff.PASNvsTSB_givenAncestor)] <- 0.00
+PASNspecificGenesInGaps <- treatment_specific_genes_n_proteins |> filter(PASN=="PASN", TSB=="absent")
+TSBspecificGenesInGaps <- treatment_specific_genes_n_proteins |> filter(PASN=="absent", TSB=="TSB")
+
+
+# write out
+(fN <- paste("All_PASN_specificGaps_withProteinExpressionData_", clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(PASNspecificGenesInGaps, file = fN)
+(fN <- paste("All_TSB_specificGaps_withProteinExpressionData_", clone_of_interest, "_category", COI, ".tsv", sep = ""))
+write_tsv(TSBspecificGenesInGaps, file = fN)
+
+# write out stringDB files
+# generate input files for StringDB
+
+stringTSB_gappedProteins <- TSBspecificGenesInGaps %>%
+    select(proteinID, diff.PASNvsTSB_givenAncestor)
+(fN <- paste("All_TSB_specific_gapped_proteins_", clone_of_interest, "_category", COI, "_stringDB.tsv", sep = ""))
+write_tsv(stringTSB_gappedProteins, file = fN, col_names = FALSE)
+stringPASN_gappedProteins <- PASNspecificGenesInGaps %>%
+    select(proteinID, diff.PASNvsTSB_givenAncestor)
+(fN <- paste("All_PASN_specific_gapped_proteins_", clone_of_interest, "_category", COI, "_stringDB.tsv", sep = ""))
+write_tsv(stringPASN_gappedProteins, file = fN, col_names = FALSE)
+
+# TSB:
+# https://version-12-0.string-db.org/cgi/network?networkId=bjCuAVOmA56F
+
+# PASN:
+# https://version-12-0.string-db.org/cgi/network?networkId=bnyxYnduA2rY
+
+# with protein quants
+# PASN
+# https://version-12-0.string-db.org/cgi/network?networkId=bWOsyu0vPRsb
+# TSB
+# https://version-12-0.string-db.org/cgi/network?networkId=b1uPhKPFpUZM
+
+
+
