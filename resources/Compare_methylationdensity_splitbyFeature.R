@@ -26,7 +26,7 @@ table(mtX_wPrX$category)
 
 # category of Interest
 COI <- "gene"
-
+smoothin_param <- 0.001 # less smoothing
 
 # we want to filter out modified_base -> it is unclear what type of feature it is
 mtX_wPrX <- mtX_wPrX[mtX_wPrX$feature != "modified_base",]
