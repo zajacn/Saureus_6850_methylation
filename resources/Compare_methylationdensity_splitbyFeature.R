@@ -42,7 +42,7 @@ mtX_wPrX <- mtX_wPrX[mtX_wPrX$group == "6850",]
 tbl = mtX_wPrX %>% mutate(extracol = 1) %>% dplyr::select(1:5,111) %>% unique() %>% pivot_wider(names_from = "treatment", values_from = "extracol")
 mtX_wPrX[mtX_wPrX$start %in% tbl[is.na(tbl$PASN) | is.na(tbl$TSB),]$start,] %>% group_by(group, treatment, feature, strand,category) %>% summarise(n_distinct(start)) %>% ggplot(aes(strand, `n_distinct(start)`, fill = treatment)) + geom_col(position = "dodge") + facet_grid(feature~category, scales = "free") + ggtitle("Sites unique to each treatment")
 
-methylation_slim <- mtX_wPrX %>% select(treatment, start, strand, feature, locus_tag, category) |> distinct()
+methylation_slim <- mtX_wPrX[mtX_wPrX$start %in% tbl[is.na(tbl$PASN) | is.na(tbl$TSB),]$start,] %>% select(treatment, start, strand, feature, locus_tag, category) |> distinct()
 ggplot(methylation_slim, aes(x = start)) +
     geom_density(data = subset(methylation_slim, strand == "+"),
                  aes(y = after_stat(density), fill = strand),
@@ -60,7 +60,7 @@ ggplot(methylation_slim, aes(x = start)) +
     ) +
     theme_minimal() +
     geom_hline(yintercept = 0, linetype = "dashed") + facet_grid(category~paste0(treatment, feature))
-
+methylation_slim$blocks = ezCut(methylation_slim$start, breaks = seq(1, 2736534, 10000))
 methylation_slim %>% group_by(blocks, treatment, strand, feature,category) %>% summarise(n_distinct(start)) %>% pivot_wider(names_from = treatment, values_from = `n_distinct(start)`) %>% replace(is.na(.), 0) %>% mutate(diff = PASN - TSB) %>% mutate(ctt = case_when(diff > 0~ "hypomethylated in TSB",diff == 0 ~ "shared", diff < 0 ~"hypomethylated in PASN" )) %>% group_by(strand, feature, category, ctt) %>% summarise(number_of_blocks = n()) %>% ggplot(aes(strand, number_of_blocks, fill = ctt)) + geom_col(position = "dodge") + facet_grid(category ~ feature)
 methylation_slim %>% group_by(blocks, treatment, strand, feature,category) %>% summarise(n_distinct(start)) %>% pivot_wider(names_from = treatment, values_from = `n_distinct(start)`) %>% replace(is.na(.), 0) %>% mutate(diff = PASN - TSB) %>% mutate(ctt = case_when(diff > 1~ "hypomethylated in TSB (>1 site)",.default ="shared", diff < -1 ~"hypomethylated in PASN (>1 site)" )) %>% group_by(strand, feature, category, ctt) %>% summarise(number_of_blocks = n()) %>% ggplot(aes(strand, number_of_blocks, fill = ctt)) + geom_col(position = "dodge") + facet_grid(category ~ feature) + ggtitle("Methylation density per 10kb")
 
