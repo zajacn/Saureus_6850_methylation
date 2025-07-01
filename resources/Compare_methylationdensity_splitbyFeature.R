@@ -7,12 +7,16 @@
 # 2025-05-28
 # this script is used to join the prX data with the methylation data
 
+# install libs
+# remotes::install_github("uzh/ezRun")
+
 # load libraries
 library(dplyr)
 library(readr)
 library(tidyr)
 library(ggplot2)
 library(purrr)
+library(ezRun)
 
 # read in the data
 prX <- readRDS("SA6850_prXallWide_moreMetaInfo.rds")
@@ -40,6 +44,7 @@ unique(mtX_wPrX$group)
 mtX_wPrX <- mtX_wPrX[mtX_wPrX$group == "6850",]
 
 tbl = mtX_wPrX %>% mutate(extracol = 1) %>% dplyr::select(1:5,111) %>% unique() %>% pivot_wider(names_from = "treatment", values_from = "extracol")
+mtX_wPrX[mtX_wPrX$start %in% tbl[is.na(tbl$PASN) | is.na(tbl$TSB),]$start,] %>% group_by(group, treatment, feature, strand,category) %>% summarise(n_distinct(start))
 mtX_wPrX[mtX_wPrX$start %in% tbl[is.na(tbl$PASN) | is.na(tbl$TSB),]$start,] %>% group_by(group, treatment, feature, strand,category) %>% summarise(n_distinct(start)) %>% ggplot(aes(strand, `n_distinct(start)`, fill = treatment)) + geom_col(position = "dodge") + facet_grid(feature~category, scales = "free") + ggtitle("Sites unique to each treatment")
 
 methylation_slim <- mtX_wPrX[mtX_wPrX$start %in% tbl[is.na(tbl$PASN) | is.na(tbl$TSB),]$start,] %>% select(treatment, start, strand, feature, locus_tag, category) |> distinct()
