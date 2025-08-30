@@ -12,7 +12,7 @@ HiFi reads were converted to add kinetic information using ccs-kinetics-bystrand
 * ~~[JG] calculate all possible contrasts for proteomics data (log2FC, T, FDR) for multiple contrasts~~ -> done, outside of this repos using prolfquapp
 * ~~[JG] add proteomics data (contrast, log2FC, T, FDR) to mtx data frame (all combinations of contrasts?)~~ -> done, new rds file in resources
 * [JG] join proteomics data w/ mtx in both directions (mtx to proteomics and proteomics to mtx) using locus_tag
-
+* [NZ] - motif analysis of 6mA and 4mC
 
 
 # Brainstorming 16/01/2025
@@ -50,3 +50,4 @@ https://www.nature.com/articles/srep29390 (methylation in SA from Group X)
 https://journals.asm.org/doi/full/10.1128/mbio.01773-24 #conserved 50S ribosomal protein methylation 
 https://www.nature.com/articles/s41467-023-38291-1 #conserved pattern of 6mA across 28 strains of L.paracasei
 https://pmc.ncbi.nlm.nih.gov/articles/PMC11544029/ #genomic methylation promotes SA persistance, they found 6mA but needed to adjust their seq for 4mC
+https://doi.org/10.1371/journal.pone.0322006 #Epigenetic background of lineage-specific gene expression landscapes of four Staphylococcus aureus hospital isolates
