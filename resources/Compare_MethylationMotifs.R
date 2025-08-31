@@ -77,3 +77,5 @@ mtX_wPrX %>% group_by(treatment, group, clusters) %>% summarise(n_distinct(start
 #Is there a difference in motif usage between categories
 mtX_wPrX %>% group_by(treatment, group, category, clusters) %>% summarise(n_distinct(start)) %>% ggplot(aes(treatment, `n_distinct(start)`, fill = as.character(clusters))) + geom_col(position = "dodge") + facet_grid(category~group)
 
+# Are proteins from any of the motif clusters under of overexpressed on average
+mtX_wPrX %>% filter(group == "6850" & !is.na(diff.PASNvsTSB_givenAncestor)) %>% group_by(clusters) %>% summarise(mean(diff.PASNvsTSB_givenAncestor)) %>% ggplot(aes(`mean(diff.PASNvsTSB_givenAncestor)`, as.character(clusters))) + geom_col()
